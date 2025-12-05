@@ -1,0 +1,42 @@
+[
+  {
+    "id": "onepiece",
+    "title": "One Piece",
+    "author": "Eiichiro Oda",
+    "thumbnail": "assets/thumbnails/onepiece.jpg",
+    "chapters": [
+      {
+        "name": "Chapter 1100",
+        "images": [
+          "https://images2.imgbox.com/5e/1f/abc123.jpg",
+          "https://images2.imgbox.com/3d/2a/def456.jpg",
+          "https://images2.imgbox.com/9f/8b/ghi789.jpg"
+          // Thêm bao nhiêu ảnh tùy thích (mỗi ảnh = 1 trang)
+        ]
+      },
+      {
+        "name": "Chapter 1099",
+        "images": [
+          "https://images2.imgbox.com/aa/bb/ccdd11.jpg",
+          "https://images2.imgbox.com/ff/ee/gg22.jpg"
+        ]
+      }
+    ]
+  },
+
+  {
+    "id": "jujutsukaisen",
+    "title": "Jujutsu Kaisen",
+    "author": "Gege Akutami",
+    "thumbnail": "assets/thumbnails/jjk.jpg",
+    "chapters": [
+      {
+        "name": "Chapter 245",
+        "images": [
+          "https://images2.imgbox.com/11/22/334455.jpg",
+          "https://images2.imgbox.com/66/77/889900.jpg"
+        ]
+      }
+    ]
+  }
+]
