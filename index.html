@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web manga của coconut</title>
+<style>
+    :root {
+        --primary: #00d4ff;
+        --bg: #0f0f12;
+        --card: #1a1a1f;
+        --text: #e0e0e0;
+        --text-light: #aaaaaa;
+    }
+    
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+        font-family: 'Segoe UI', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+    }
+
+    /* Header & Menu */
+    header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        background: rgba(15,15,18,0.95);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid #333;
+        transition: all 0.3s;
+    }
+
+    .navbar {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 70px;
+    }
+
+    .logo {
+        font-size: 28px;
+        font-weight: 800;
+        background: linear-gradient(90deg, #00d4ff, #ff00c8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-decoration: none;
+    }
+
+    .nav-links {
+        display: flex;
+        gap: 35px;
+        list-style: none;
+    }
+
+    .nav-links a {
+        color: var(--text-light);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 16px;
+        position: relative;
+        transition: all 0.3s;
+    }
+
+    .nav-links a:hover {
+        color: var(--primary);
+    }
+
+    .nav-links a::after {
+        content: '';
+        position: absolute;
+        width: 0;
+        height: 2px;
+        bottom: -8px;
+        left: 50%;
+        background: var(--primary);
+        transition: all 0.3s;
+        transform: translateX(-50%);
+    }
+
+    .nav-links a:hover::after {
+        width: 100%;
+    }
+
+    /* Search box */
+    .search-box {
+        position: relative;
+    }
+
+    .search-box input {
+        padding: 12px 45px 12px 15px;
+        width: 280px;
+        border: none;
+        border-radius: 30px;
+        background: #2a2a32;
+        color: white;
+        font-size: 15px;
+        outline: none;
+        transition: 0.3s;
+    }
+
+    .search-box input:focus {
+        background: #333;
+        box-shadow: 0 0 0 3px rgba(0,212,255,0.3);
+    }
+
+    .search-box i {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--primary);
+        cursor: pointer;
+    }
+
+    /* Mobile menu button */
+    .menu-toggle {
+        display: none;
+        font-size: 24px;
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+        .nav-links {
+            position: fixed;
+            top: 70px;
+            left: -100%;
+            width: 100%;
+            height: calc(100vh - 70px);
+            background: var(--card);
+            flex-direction: column;
+            align-items: center;
+            justify-content: start;
+            padding-top: 50px;
+            transition: 0.4s;
+        }
+
+        .nav-links.active {
+            left: 0;
+        }
+
+        .nav-links a {
+            font-size: 20px;
+            padding: 15px;
+        }
+
+        .search-box { display: none; }
+        .menu-toggle { display: block; }
+    }
+
+    /* Fake content để test */
+    .content {
+        margin-top: 100px;
+        padding: 20px;
+        text-align: center;
+        font-size: 24px;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <nav class="navbar">
+        <a href="/" class="logo">Coconut website</a>
+        
+        <ul class="nav-links">
+            <li><a href="/">Trang chủ</a></li>
+            <li><a href="/the-loai">Thể loại</a></li>
+            <li><a href="/moi-cap-nhat">Mới cập nhật</a></li>
+            <li><a href="/top-truyen">Top truyện</a></li>
+            <li><a href="/theo-doi">Theo dõi</a></li>
+            <li><a href="/lich-su">Lịch sử</a></li>
+        </ul>
+
+        <div class="search-box">
+            <input type="text" placeholder="Tìm truyện, tác giả...">
+            <i>🔍</i>
+        </div>
+
+        <button class="menu-toggle">☰</button>
+    </nav>
+</header>
+
+<div class="content">
+    <h1>Chào mừng đến với Web đọc truyện tranh của coconut</h1>
+</div>
+
+<script>
+    // Mobile menu toggle
+    document.querySelector('.menu-toggle').addEventListener('click', () => {
+        document.querySelector('.nav-links').classList.toggle('active');
+    });
+
+    // Tự động ẩn/hiện header khi cuộn (tùy chọn)
+    let lastScroll = 0;
+    window.addEventListener('scroll', () => {
+        let currentScroll = window.pageYOffset;
+        if (currentScroll <= 0) {
+            document.querySelector('header').style.transform = 'translateY(0)';
+        } else if (currentScroll > lastScroll) {
+            document.querySelector('header').style.transform = 'translateY(-100%)';
+        } else {
+            document.querySelector('header').style.transform = 'translateY(0)';
+        }
+        lastScroll = currentScroll;
+    });
+</script>
+<script>
+// Danh sách truyện hiện trên trang chủ (bạn thêm thoải mái)
+const danhSachTruyen = [
+  { ten: "", slug: "", thumb: "", chapmoi: "" },
+  { ten: "", slug: "", thumb: "", chapmoi: "" },
+  { ten: "", slug: "", thumb: "", chapmoi: "" },
+  // Thêm truyện mới chỉ cần copy dòng này xuống và sửa
+];
+
+const grid = document.querySelector('.truyen-grid') || document.createElement('div');
+grid.className = 'truyen-grid';
+grid.innerHTML = danhSachTruyen.map(t => `
+  <div class="truyen-card" onclick="location.href='truyen.html?slug=${t.slug}'">
+    <img src="${t.thumb}" class="truyen-thumb" onerror="this.src='https://via.placeholder.com/250x350/00d4ff/fff?text=${t.ten}'">
+    <div class="truyen-info">
+      <div class="truyen-title">${t.ten}</div>
+      <div class="truyen-status">${t.chapmoi}</div>
+    </div>
+  </div>
+`).join('');
+document.querySelector('.content').appendChild(grid);
+</script>
+<script>
+// Danh sách truyện tự động quét từ thư mục /truyen/
+fetch('https://api.github.com/repos/pro-coconut/pro-coconut.github.io/contents/truyen')
+  .then(r => r.json())
+  .then(folders => {
+    const grid = document.querySelector('.truyen-grid');
+    folders.forEach(folder => {
+      const div = document.createElement('div');
+      div.className = 'truyen-card';
+      div.innerHTML = `
+        <img src="truyen/${folder.name}/thumb.jpg" class="truyen-thumb" onerror="this.src='https://via.placeholder.com/250x350/00d4ff/fff?text=${folder.name}'">
+        <div class="truyen-info">
+          <div class="truyen-title">${folder.name.replace(/-/g,' ')}</div>
+          <div class="truyen-status">Nhiều chap</div>
+        </div>
+      `;
+      div.onclick = () => location.href = `truyen.html?slug=${folder.name}`;
+      grid.appendChild(div);
+    });
+  });
+</script>
+</body>
+</html>
