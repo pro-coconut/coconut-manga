@@ -1,0 +1,36 @@
+name: NetTruyen Auto Scraper Bot
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Chạy mỗi 30 phút (an toàn, không bị khóa)
+  workflow_dispatch:  # Cho phép chạy thủ công từ tab Actions
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 lxml
+
+      - name: Create images folder
+        run: mkdir -p images
+
+      - name: Run scraper bot
+        run: python scraper.py
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "bot@github.com"
+          git config --local user.name "NetTruyen Bot"
+          git add stories.json images/
+          git commit -m "Auto scrape from NetTruyen0209: $(date)" || echo "No changes"
+          git push
