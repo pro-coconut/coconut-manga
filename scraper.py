@@ -8,10 +8,10 @@ from git import Repo
 # ----------------------------
 # CONFIG
 # ----------------------------
-# Token sẽ được workflow truyền vào bằng biến môi trường GITHUB_TOKEN
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+# Lấy token từ secret workflow
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN_BOT")
 if not GITHUB_TOKEN:
-    raise ValueError("Missing GitHub token! Set GITHUB_TOKEN in workflow secrets.")
+    raise ValueError("Missing GitHub token! Set secret MY_GITHUB_TOKEN and map to GITHUB_TOKEN_BOT in workflow.")
 
 REPO_URL = "https://github.com/pro-coconut/pro-coconut.github.io.git"
 LOCAL_REPO = "pro-coconut-site"
@@ -19,10 +19,8 @@ STORIES_FILE = "stories.json"
 
 START_PAGE = 1
 MAX_PAGES = 5
-MAX_CHAPTERS_PER_RUN = 50
 STORIES_PER_RUN = 3
-BATCH_SIZE = 5
-RUN_INTERVAL_MINUTES = 30  # chỉ cần dùng nếu chạy loop, trên Actions sẽ schedule
+MAX_CHAPTERS_PER_RUN = 50
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0",
@@ -38,10 +36,8 @@ def safe_get(url):
             r = requests.get(url, headers=HEADERS, timeout=12)
             if r.status_code == 200:
                 return r
-            print("WARNING: status", r.status_code, "for", url)
             time.sleep(2)
-        except Exception as e:
-            print("WARNING request error:", e)
+        except:
             time.sleep(2)
     return None
 
