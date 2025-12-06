@@ -1,4 +1,4 @@
-name: Auto Scraper Bot
+name: Auto Scraper Bot Verbose
 
 on:
   schedule:
@@ -28,9 +28,9 @@ jobs:
           pip install --upgrade pip
           pip install requests beautifulsoup4 lxml GitPython
 
-      # Run scraper
-      - name: Run scraper
+      # Run verbose scraper
+      - name: Run verbose scraper
         env:
           GITHUB_TOKEN_BOT: ${{ secrets.MY_GITHUB_TOKEN }}
         run: |
-          python scraper_multithread_fixed.py
+          python scraper_multithread_verbose.py
