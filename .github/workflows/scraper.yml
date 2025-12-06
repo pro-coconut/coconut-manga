@@ -2,7 +2,7 @@ name: Run Scraper
 
 on:
   schedule:
-    - cron: "*/30 * * * *" # mỗi 30 phút
+    - cron: "*/30 * * * *" # chạy mỗi 30 phút
   workflow_dispatch:
 
 jobs:
@@ -23,5 +23,5 @@ jobs:
 
       - name: Run Scraper
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_BOT }}
+          GITHUB_TOKEN_BOT: ${{ secrets.MY_GITHUB_TOKEN }}
         run: python scraper.py
