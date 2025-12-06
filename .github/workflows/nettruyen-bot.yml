@@ -1,47 +1,36 @@
-name: scrape-and-update
+name: NetTruyen Scraper Bot
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/30 * * * *"   # chạy mỗi 30 phút
+    - cron: "*/30 * * * *"
+
+permissions:
+  contents: write
 
 jobs:
   scraper:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: 3.11
+          cache: pip
 
       - name: Install dependencies
-        run: |
-          pip install requests beautifulsoup4 lxml urllib3
+        run: pip install requests beautifulsoup4 lxml
 
-      - name: Debug - show files
-        run: |
-          echo "Current directory:"
-          pwd
-          echo "Files:"
-          ls -la
-
-      - name: Debug - show scraper content
-        run: |
-          echo "Preview scraper.py:"
-          sed -n '1,160p' scraper.py || true
-
-      - name: Run scraper bot
+      - name: Run scraper
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
-          MAX_PAGES: ${{ secrets.MAX_PAGES }}
+          START_PAGE: 1
+          MAX_PAGES: 5
           STORIES_PER_RUN: 3
-          START_PAGE: 3
-        run: |
-          python -u scraper.py
+        run: python -u scraper.py
 
       - name: Commit posted.json
         run: |
@@ -49,8 +38,8 @@ jobs:
             git config --local user.email "actions@github.com"
             git config --local user.name "GitHub Actions"
             git add posted.json
-            git commit -m "Update posted list"
+            git commit -m "update posted list"
             git push
           else
-            echo "No changes to commit."
+            echo "No changes."
           fi
