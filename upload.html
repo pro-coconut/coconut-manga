@@ -10,8 +10,7 @@
     h1{background:#e74c3c;color:#fff;text-align:center;padding:20px;margin:0;font-size:24px}
     .form{padding:20px}
     input[type=text],input[type=file]{width:100%;padding:12px;margin:10px 0;border:1px solid #ddd;border-radius:8px;box-sizing:border-box}
-    .drop{border:3px dashed #e74c3c;background:#fff8f8;padding:40px;text-align:center;border-radius:12px;margin:15px 0;cursor:pointer;font-size:16px}
-    .drop:hover{background:#ffe5e5}
+    .drop{border:3px dashed #e74c3c;background:#fff8f8;padding:40px;text-align:center;border-radius:12px;margin:15px 0;cursor:pointer}
     button{width:100%;padding:15px;background:#e74c3c;color:#fff;border:none;border-radius:10px;font-size:18px;margin-top:10px;cursor:pointer}
     .progress{height:12px;background:#eee;border-radius:6px;overflow:hidden;margin:15px 0}
     .bar{height:100%;width:0;background:#e74c3c;transition:all .4s}
@@ -24,43 +23,53 @@
     <div class="form">
       <input type="text" id="title" placeholder="Tên truyện (bắt buộc)" required>
       <input type="text" id="id" placeholder="ID (không dấu, vd: tavodich)" required>
-      <input type="text" id="author" placeholder="Tác giả (không bắt buộc)">
+      <input type="text" id="author" placeholder="Tác giả (tuỳ chọn)">
       <input type="file" id="cover" accept="image/*" required>
       <input type="text" id="chap" placeholder="Tên chapter" value="Chapter 1">
-      <div class="drop" id="dropZone">Kéo thả ảnh chapter vào đây<br>hoặc nhấn chọn (tối đa 30 ảnh)</div>
+      <div class="drop" id="dropZone">Kéo thả ảnh chapter vào đây<br>hoặc nhấn chọn</div>
       <input type="file" id="chapterImages" multiple accept="image/*" style="display:none">
       <button onclick="upload()">GỬI TRUYỆN NGAY</button>
       <div class="progress"><div class="bar" id="progressBar"></div></div>
-      <div id="status">Sẵn sàng</div>
+      <div id="status">Sẵn sàng – ảnh sẽ tự động nén nhẹ</div>
     </div>
   </div>
 
   <script>
-    let token = localStorage.getItem("gh_token");
-    if (!token || !token.startsWith("ghp_")) {
-      token = prompt("Nhập GitHub Token (ghp_...)");
-      if (token && token.startsWith("ghp_")) localStorage.setItem("gh_token", token);
-      else { alert("Token sai!"); throw ""; }
-    }
+    let token = localStorage.getItem("gh_token") || prompt("Nhập GitHub Token (ghp_...)");
+    if (token && token.startsWith("ghp_")) localStorage.setItem("gh_token", token);
+    else { alert("Token sai!"); throw ""; }
     const API = "https://api.github.com/repos/pro-coconut/pro-coconut.github.io/contents";
     const RAW = "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main";
 
-    // Lấy SHA riêng (không lồng nhau nữa)
-    async function getSha(path) {
-      try {
-        const r = await fetch(API + "/" + path, {headers: {Authorization: "token " + token}});
-        if (r.ok) return (await r.json()).sha;
-      } catch(e) {}
-      return null;
+    // NÉN ẢNH SIÊU NHANH TRƯỚC KHI UPLOAD
+    async function compress(file) {
+      return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const max = 1200; // giới hạn chiều rộng
+          if (img.width > max) {
+            canvas.width = max;
+            canvas.height = img.height * (max / img.width);
+          } else {
+            canvas.width = img.width; canvas.height = img.height;
+          }
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(blob => resolve(new File([blob], file.name, {type: blob.type})), 'image/jpeg', 0.8);
+        };
+        img.src = URL.createObjectURL(file);
+      });
     }
 
     async function put(path, file) {
-      const buf = await file.arrayBuffer();
-      const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
-      const sha = await getSha(path);
+      const compressed = await compress(file);
+      const b64 = btoa(String.fromCharCode(...new Uint8Array(await compressed.arrayBuffer())));
       const payload = {message: "upload", content: b64, branch: "main"};
-      if (sha) payload.sha = sha;
-
+      try {
+        const r = await fetch(API + "/" + path, {headers: {Authorization: "token " + token}});
+        if (r.ok) payload.sha = (await r.json()).sha;
+      } catch(e) {}
       const res = await fetch(API + "/" + path, {
         method: "PUT",
         headers: {Authorization: "token " + token, "Content-Type": "application/json"},
@@ -74,77 +83,64 @@
       const r = await fetch(RAW + "/stories.json?t=" + Date.now());
       return r.ok ? await r.json() : [];
     }
-
-    async function saveStories(data) {
-      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
-      const sha = await getSha("stories.json");
-      const payload = {message: "update stories", content: b64, branch: "main"};
-      if (sha) payload.sha = sha;
-      await fetch(API + "/stories.json", {
-        method: "PUT",
-        headers: {Authorization: "token " + token, "Content-Type": "application/json"},
-        body: JSON.stringify(payload)
-      });
+    async function saveStories(d) {
+      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(d,null,2))));
+      const payload = {message: "update", content: b64, branch: "main"};
+      try {
+        const r = await fetch(API + "/stories.json", {headers: {Authorization: "token " + token}});
+        if (r.ok) payload.sha = (await r.json()).sha;
+      } catch(e) {}
+      await fetch(API + "/stories.json", {method:"PUT", headers:{Authorization:"token "+token,"Content-Type":"application/json"}, body:JSON.stringify(payload)});
     }
 
     async function upload() {
-      const status = document.getElementById("status");
-      const bar = document.getElementById("progressBar");
+      const s = document.getElementById("status");
+      const b = document.getElementById("progressBar");
       try {
-        status.textContent = "Kiểm tra..."; bar.style.width = "5%";
-        const files = document.getElementById("chapterImages").files;
-        if (files.length > 30) throw "Tối đa 30 ảnh/lần để tránh lỗi! Chia nhỏ chapter nhé.";
-
+        s.textContent = "Đang nén và upload..."; b.style.width = "5%";
         const id = document.getElementById("id").value.trim().toLowerCase().replace(/[^a-z0-9]/g,"");
         const title = document.getElementById("title").value.trim();
         if (!title || !id) throw "Nhập tên + ID";
 
         // Bìa
-        status.textContent = "Upload bìa..."; bar.style.width = "20%";
-        const coverFile = document.getElementById("cover").files[0];
+        const coverFile = await compress(document.getElementById("cover").files[0]);
         const coverExt = coverFile.name.slice(coverFile.name.lastIndexOf("."));
+        s.textContent = "Upload bìa..."; b.style.width = "25%";
         const cover = await put("images/"+id+"_cover"+coverExt, coverFile);
 
         // Chapter
+        const files = document.getElementById("chapterImages").files;
         const urls = [];
-        for (let i = 0; i < files.length; i++) {
-          const ext = files[i].name.slice(files[i].name.lastIndexOf("."));
-          status.textContent = `Upload ${i+1}/${files.length}...`;
-          urls.push(await put("images/"+id+"_p"+(i+1)+ext, files[i]));
-          bar.style.width = (20 + 70*(i+1)/files.length) + "%";
+        for(let i=0; i<files.length; i++){
+          s.textContent = `Nén & upload ${i+1}/${files.length}...`;
+          const f = await compress(files[i]);
+          const ext = f.name.slice(f.name.lastIndexOf("."));
+          urls.push(await put("images/"+id+"_p"+(i+1)+ext, f));
+          b.style.width = 25 + 70*(i+1)/files.length + "%";
         }
 
         // stories.json
-        status.textContent = "Cập nhật danh sách..."; bar.style.width = "95%";
+        s.textContent = "Cập nhật danh sách..."; b.style.width = "95%";
         const list = await getStories();
-        const exist = list.find(x => x.id === id);
-        const chap = {name: document.getElementById("chap").value || "Chapter mới", images: urls};
-        if (exist) exist.chapters.push(chap);
+        const exist = list.find(x=>x.id===id);
+        const chap = {name: document.getElementById("chap").value, images: urls};
+        if(exist) exist.chapters.push(chap);
         else list.push({id, title, author: document.getElementById("author").value||"Không rõ", thumbnail: cover, chapters: [chap]});
         await saveStories(list);
 
-        bar.style.width = "100%";
-        status.innerHTML = "<b style='color:green'>HOÀN TẤT! Reload trang chủ là thấy truyện!</b>";
+        b.style.width = "100%";
+        s.innerHTML = "<b style='color:green'>HOÀN TẤT 100%!<br>Reload trang chủ là thấy truyện!</b>";
       } catch(e) {
-        status.innerHTML = "<b style='color:red'>LỖI: "+e+"</b>";
-        bar.style.width = "0%";
+        s.innerHTML = "<b style='color:red'>LỖI: "+e+"</b>";
+        b.style.width = "0%";
       }
     }
 
-    // Drag & drop
-    const dropZone = document.getElementById("dropZone");
-    dropZone.onclick = () => document.getElementById("chapterImages").click();
-    dropZone.ondragover = e => e.preventDefault();
-    dropZone.ondrop = e => {
-      e.preventDefault();
-      document.getElementById("chapterImages").files = e.dataTransfer.files;
-      const c = e.dataTransfer.files.length;
-      dropZone.innerHTML = c > 30 ? "<b style='color:red'>Quá 30 ảnh! Chia nhỏ chapter</b>" : `<b>Đã chọn ${c} ảnh</b>`;
-    };
-    document.getElementById("chapterImages").onchange = () => {
-      const c = document.getElementById("chapterImages").files.length;
-      dropZone.innerHTML = c > 30 ? "<b style='color:red'>Quá 30 ảnh!</b>" : `<b>Đã chọn ${c} ảnh</b>`;
-    };
+    const d = document.getElementById("dropZone");
+    d.onclick = () => document.getElementById("chapterImages").click();
+    d.ondragover = e => e.preventDefault();
+    d.ondrop = e => {e.preventDefault(); document.getElementById("chapterImages").files = e.dataTransfer.files; d.innerHTML = `Đã chọn ${e.dataTransfer.files.length} ảnh`};
+    document.getElementById("chapterImages").onchange = () => d.innerHTML = `Đã chọn ${document.getElementById("chapterImages").files.length} ảnh`;
   </script>
 </body>
 </html>
