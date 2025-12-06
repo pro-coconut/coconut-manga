@@ -2,7 +2,7 @@ name: NetTruyen Auto Scraper Bot
 
 on:
   schedule:
-    - cron: '0 */2 * * *'   # chạy mỗi 2 tiếng
+    - cron: '*/30 * * * *'   # mỗi 30 phút
   workflow_dispatch:
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: pip install requests beautifulsoup4 lxml
 
-      - name: Run scraper
+      - name: Run scraper (random 1 story)
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
           API_KEY: ${{ secrets.API_KEY }}
