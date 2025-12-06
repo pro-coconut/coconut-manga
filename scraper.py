@@ -8,6 +8,11 @@ from git import Repo
 # ----------------------------
 # CONFIG
 # ----------------------------
+# Token sẽ được workflow truyền vào bằng biến môi trường GITHUB_TOKEN
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+if not GITHUB_TOKEN:
+    raise ValueError("Missing GitHub token! Set GITHUB_TOKEN in workflow secrets.")
+
 REPO_URL = "https://github.com/pro-coconut/pro-coconut.github.io.git"
 LOCAL_REPO = "pro-coconut-site"
 STORIES_FILE = "stories.json"
@@ -17,19 +22,12 @@ MAX_PAGES = 5
 MAX_CHAPTERS_PER_RUN = 50
 STORIES_PER_RUN = 3
 BATCH_SIZE = 5
-RUN_INTERVAL_MINUTES = 30
+RUN_INTERVAL_MINUTES = 30  # chỉ cần dùng nếu chạy loop, trên Actions sẽ schedule
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0",
     "Accept": "*/*",
 }
-
-# ----------------------------
-# GET TOKEN INPUT
-# ----------------------------
-GITHUB_TOKEN = input("Nhập GitHub Personal Access Token: ").strip()
-if not GITHUB_TOKEN:
-    raise ValueError("Bạn phải nhập token để bot có thể push lên GitHub!")
 
 # ----------------------------
 # UTILITIES
@@ -127,7 +125,7 @@ def push_to_github():
         Repo.clone_from(f"https://{GITHUB_TOKEN}@github.com/pro-coconut/pro-coconut.github.io.git", LOCAL_REPO)
     repo = Repo(LOCAL_REPO)
     repo.git.add(STORIES_FILE)
-    repo.index.commit("Update stories.json via bot")
+    repo.index.commit("Update stories.json via GitHub Actions bot")
     repo.remote().push()
     print("stories.json pushed to GitHub Pages!")
 
@@ -172,14 +170,7 @@ def run_scraper():
     print("Bot run finished.")
 
 # ----------------------------
-# AUTO RUN
+# MAIN
 # ----------------------------
 if __name__ == "__main__":
-    while True:
-        print("===== BOT RUN START =====")
-        try:
-            run_scraper()
-        except Exception as e:
-            print("ERROR:", e)
-        print(f"Sleeping {RUN_INTERVAL_MINUTES} minutes...")
-        time.sleep(RUN_INTERVAL_MINUTES*60)
+    run_scraper()
