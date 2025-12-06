@@ -3,48 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="page-title">Đang tải...</title>
+  <title id="page-title">Coconut Manga</title>
   <link rel="stylesheet" href="css/style.css">
   <style>
-    body{background:#f4f4f9;color:#333}
-    .detail-container{max-width:1100px;margin:20px auto;padding:20px;background:#fff;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.15)}
-    .story-header{display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start}
+    body{background:#f4f4f9;color:#333;font-family:Arial,sans-serif}
+    .container{max-width:1100px;margin:20px auto;padding:20px}
+    .detail{background:#fff;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.15);overflow:hidden}
+    .header{display:flex;gap:30px;flex-wrap:wrap;padding:30px}
     .cover img{width:100%;max-width:380px;border-radius:15px;box-shadow:0 10px 30px rgba(0,0,0,0.3)}
     .info{flex:1;min-width:300px}
-    .info h1{font-size:2.4em;margin:0 0 10px;color:#e74c3c}
-    .meta{color:#555;margin:10px 0;font-size:1.1em}
-    .synopsis{background:#f9f9f9;padding:20px;border-radius:12px;margin:25px 0;line-height:1.7;border-left:5px solid #e74c3c}
-    .chapters h3{margin:30px 0 15px;font-size:1.5em;color:#333;border-bottom:2px solid #e74c3c;padding-bottom:8px}
-    .chap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
-    .chap-btn{background:linear-gradient(45deg,#e74c3c,#c0392b);color:#fff;padding:14px;text-align:center;border-radius:10px;cursor:pointer;transition:.3s;font-weight:bold}
-    .chap-btn:hover{background:#c0392b;transform:translateY(-4px);box-shadow:0 8px 20px rgba(231,76,60,0.4)}
-    @media(max-width:768px){.story-header{flex-direction:column;text-align:center}.cover img{max-width:100%}}
+    .info h1{font-size:2.5em;margin:0 0 15px;color:#e74c3c}
+    .meta{margin:15px 0;font-size:1.1em}
+    .synopsis{background:#f9f9f9;padding:25px;border-radius:12px;margin:25px 0;line-height:1.8;border-left:5px solid #e74c3c}
+    .chap-list h3{font-size:1.6em;margin:40px 0 20px;color:#333;border-bottom:3px solid #e74c3c;padding-bottom:10px}
+    .chap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:15px}
+    .chap-btn{background:#e74c3c;color:#fff;padding:15px;text-align:center;border-radius:12px;cursor:pointer;font-weight:bold;transition:.3s}
+    .chap-btn:hover{background:#c0392b;transform:translateY(-5px);box-shadow:0 10px 20px rgba(231,76,60,0.4)}
+    .loading{text-align:center;padding:80px;font-size:1.5em;color:#e74c3c}
+    @media(max-width:768px){.header{flex-direction:column;text-align:center}.cover img{max-width:100%}}
   </style>
 </head>
 <body>
 <div class="container">
-  <div class="detail-container" id="detail">
-    <div style="text-align:center;padding:60px;font-size:1.5em">Đang tải truyện...</div>
+  <div class="detail" id="content">
+    <div class="loading">Đang tải thông tin truyện...</div>
   </div>
 </div>
 
 <script>
-const params = new URLSearchParams(location.search);
-const id = params.get('id');
-if (!id) { document.body.innerHTML = "<h1 style='text-align:center;margin:100px;color:#e74c3c'>Không tìm thấy truyện!</h1>"; return; }
+const urlParams = new URLSearchParams(location.search);
+const id = urlParams.get('id');
+if (!id) { document.getElementById("content").innerHTML = "<h1 style='text-align:center;padding:100px'>Không tìm thấy truyện!</h1>"; }
 
-fetch('stories.json?t='+Date.now())
+fetch('stories.json?t=' + Date.now())
   .then(r => r.json())
   .then(data => {
     const story = data.find(s => s.id === id);
     if (!story) throw "Truyện không tồn tại";
 
-    document.getElementById('page-title').textContent = story.title + " - Coconut Manga";
-    document.getElementById('detail').innerHTML = `
-      <div class="story-header">
-        <div class="cover">
-          <img src="${story.thumbnail}" alt="${story.title}">
-        </div>
+    document.getElementById("page-title").textContent = story.title + " - Coconut Manga";
+    document.getElementById("content").innerHTML = `
+      <div class="header">
+        <div class="cover"><img src="${story.thumbnail}" alt="${story.title}"></div>
         <div class="info">
           <h1>${story.title}</h1>
           <div class="meta">
@@ -52,14 +52,14 @@ fetch('stories.json?t='+Date.now())
             <p><strong>Số chapter:</strong> ${story.chapters.length}</p>
           </div>
           <div class="synopsis">
-            <strong>📖 Tóm tắt truyện:</strong><br>
-            ${story.description || "Chưa có tóm tắt. Bạn có thể thêm trong stories.json nha!"}
+            <strong>Tóm tắt truyện:</strong><br>
+            ${story.description || "Chưa có tóm tắt. Bạn có thể thêm khi đăng truyện!"}
           </div>
         </div>
       </div>
 
-      <div class="chapters">
-        <h3>📚 Danh sách chapter (${story.chapters.length})</h3>
+      <div class="chap-list">
+        <h3>Danh sách chapter (${story.chapters.length})</h3>
         <div class="chap-grid">
           ${story.chapters.map((ch, i) => `
             <div class="chap-btn" onclick="location.href='reader.html?id=${id}#chap${i}'">
@@ -71,7 +71,7 @@ fetch('stories.json?t='+Date.now())
     `;
   })
   .catch(() => {
-    document.getElementById('detail').innerHTML = "<h1 style='text-align:center;color:#e74c3c;padding:100px'>Lỗi tải truyện 😢</h1>";
+    document.getElementById("content").innerHTML = "<h1 style='text-align:center;padding:100px;color:#e74c3c'>Lỗi tải truyện 😢</h1>";
   });
 </script>
 </body>
