@@ -1,146 +1,111 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Đăng Truyện - Coconut Manga</title>
-  <style>
-    body{font-family:Arial,sans-serif;background:#f4f4f9;margin:0;padding:15px}
-    .box{max-width:560px;margin:0 auto;background:#fff;border-radius:15px;box-shadow:0 5px 25px rgba(0,0,0,0.15);overflow:hidden}
-    h1{background:#e74c3c;color:#fff;text-align:center;padding:20px;margin:0;font-size:24px}
-    .form{padding:20px}
-    input[type=text],input[type=file]{width:100%;padding:12px;margin:10px 0;border:1px solid #ddd;border-radius:8px;box-sizing:border-box}
-    .drop{border:3px dashed #e74c3c;background:#fff8f8;padding:40px;text-align:center;border-radius:12px;margin:15px 0;cursor:pointer}
-    button{width:100%;padding:15px;background:#e74c3c;color:#fff;border:none;border-radius:10px;font-size:18px;margin-top:10px;cursor:pointer}
-    .progress{height:12px;background:#eee;border-radius:6px;overflow:hidden;margin:15px 0}
-    .bar{height:100%;width:0;background:#e74c3c;transition:all .4s}
-    #status{text-align:center;padding:10px;font-weight:bold;font-size:16px}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đăng Truyện - Coconut Manga</title>
+<style>
+  body{background:#f4f4f9;font-family:Arial;margin:0;padding:15px}
+  .box{max-width:560px;margin:0 auto;background:#fff;border-radius:15px;box-shadow:0 5px 25px rgba(0,0,0,0.15);overflow:hidden}
+  h1{background:#e74c3c;color:#fff;text-align:center;padding:20px;margin:0}
+  .form{padding:20px}
+  input,button{width:100%;padding:12px;margin:10px 0;border-radius:8px;border:1px solid #ddd;box-sizing:border-box}
+  button{background:#e74c3c;color:#fff;border:none;font-size:18px;cursor:pointer}
+  .drop{border:3px dashed #e74c3c;padding:40px;text-align:center;border-radius:12px;cursor:pointer}
+  .bar{height:12px;background:#eee;border-radius:6px;overflow:hidden;margin:15px 0}
+  .fill{height:100%;width:0;background:#e74c3c;transition:width .4s}
+  #status{text-align:center;font-weight:bold;padding:10px}
+</style>
 </head>
 <body>
-  <div class="box">
-    <h1>ĐĂNG TRUYỆN MỚI</h1>
-    <div class="form">
-      <input type="text" id="title" placeholder="Tên truyện (bắt buộc)" required>
-      <input type="text" id="id" placeholder="ID (không dấu, vd: tavodich)" required>
-      <input type="text" id="author" placeholder="Tác giả (tuỳ chọn)">
-      <input type="file" id="cover" accept="image/*" required>
-      <input type="text" id="chap" placeholder="Tên chapter" value="Chapter 1">
-      <div class="drop" id="dropZone">Kéo thả ảnh chapter vào đây<br>hoặc nhấn chọn</div>
-      <input type="file" id="chapterImages" multiple accept="image/*" style="display:none">
-      <button onclick="upload()">GỬI TRUYỆN NGAY</button>
-      <div class="progress"><div class="bar" id="progressBar"></div></div>
-      <div id="status">Sẵn sàng – ảnh sẽ tự động nén nhẹ</div>
-    </div>
+<div class="box">
+  <h1>ĐĂNG TRUYỆN MỚI</h1>
+  <div class="form">
+    <input type="text" id="title" placeholder="Tên truyện" required>
+    <input type="text" id="id" placeholder="ID (không dấu)" required>
+    <input type="text" id="author" placeholder="Tác giả (tuỳ chọn)">
+    <input type="file" id="cover" accept="image/*" required>
+    <input type="text" id="chap" placeholder="Tên chapter" value="Chapter 1">
+    <div class="drop" id="drop">Kéo thả ảnh chapter vào đây hoặc nhấn chọn</div>
+    <input type="file" id="imgs" multiple accept="image/*" style="display:none">
+    <button onclick="start()">GỬI NGAY</button>
+    <div class="bar"><div class="fill" id="fill"></div></div>
+    <div id="status">Sẵn sàng</div>
   </div>
+</div>
 
-  <script>
-    let token = localStorage.getItem("gh_token") || prompt("Nhập GitHub Token (ghp_...)");
-    if (token && token.startsWith("ghp_")) localStorage.setItem("gh_token", token);
-    else { alert("Token sai!"); throw ""; }
-    const API = "https://api.github.com/repos/pro-coconut/pro-coconut.github.io/contents";
-    const RAW = "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main";
+<script>
+let token = localStorage.getItem("t") || prompt("Nhập token GitHub (ghp_...)");
+if(token && token.startsWith("ghp_")) localStorage.setItem("t", token);
+else { alert("Token sai"); throw""; }
 
-    // NÉN ẢNH SIÊU NHANH TRƯỚC KHI UPLOAD
-    async function compress(file) {
-      return new Promise(resolve => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          const max = 1200; // giới hạn chiều rộng
-          if (img.width > max) {
-            canvas.width = max;
-            canvas.height = img.height * (max / img.width);
-          } else {
-            canvas.width = img.width; canvas.height = img.height;
-          }
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          canvas.toBlob(blob => resolve(new File([blob], file.name, {type: blob.type})), 'image/jpeg', 0.8);
-        };
-        img.src = URL.createObjectURL(file);
-      });
+const repo = "pro-coconut/pro-coconut.github.io";
+const api = "https://api.github.com/repos/"+repo+"/contents";
+
+async function up(path, content) {
+  const payload = {message:"upload", content, branch:"main"};
+  try {
+    const r = await fetch(api+"/"+path,{headers:{Authorization:"token "+token}});
+    if(r.ok) payload.sha = (await r.json()).sha;
+  }catch(e){}
+  const res = await fetch(api+"/"+path, {
+    method:"PUT",
+    headers:{Authorization:"token "+token,"Content-Type":"application/json"},
+    body:JSON.stringify(payload)
+  });
+  if(!res.ok) throw "Lỗi upload";
+  return "https://raw.githubusercontent.com/"+repo+"/main/"+path;
+}
+
+document.getElementById("drop").onclick = () => document.getElementById("imgs").click();
+document.getElementById("drop").ondrop = e => {e.preventDefault(); document.getElementById("imgs").files = e.dataTransfer.files; updateCount();};
+document.getElementById("imgs").onchange = updateCount;
+function updateCount() {
+  const c = document.getElementById("imgs").files.length;
+  document.getElementById("drop").innerHTML = c ? "Đã chọn <b>"+c+"</b> ảnh" : "Kéo thả ảnh chapter vào đây";
+}
+
+async function start() {
+  const s = document.getElementById("status");
+  const f = document.getElementById("fill");
+  try {
+    s.textContent = "Bắt đầu..."; f.style.width = "5%";
+    const id = document.getElementById("id").value.trim().toLowerCase().replace(/[^a-z0-9]/g,"");
+    if(!id || !document.getElementById("title").value) throw "Nhập tên + ID";
+
+    // Upload bìa
+    const coverFile = document.getElementById("cover").files[0];
+    const coverData = await new Promise(r => {let fr=new FileReader();fr.onload=e=>r(e.target.result.split(',')[1]);fr.readAsDataURL(coverFile);});
+    s.textContent = "Upload bìa..."; f.style.width = "20%";
+    const coverUrl = await up("images/"+id+"_cover.jpg", coverData);
+
+    // Upload chapter
+    const files = document.getElementById("imgs").files;
+    const urls = [];
+    for(let i=0; i<files.length; i++){
+      s.textContent = "Upload "+(i+1)+"/"+files.length;
+      const data = await new Promise(r => {let fr=new FileReader();fr.onload=e=>r(e.target.result.split(',')[1]);fr.readAsDataURL(files[i]);});
+      urls.push(await up("images/"+id+"_"+(i+1)+".jpg", data));
+      f.style.width = (20 + 75*(i+1)/files.length)+"%";
     }
 
-    async function put(path, file) {
-      const compressed = await compress(file);
-      const b64 = btoa(String.fromCharCode(...new Uint8Array(await compressed.arrayBuffer())));
-      const payload = {message: "upload", content: b64, branch: "main"};
-      try {
-        const r = await fetch(API + "/" + path, {headers: {Authorization: "token " + token}});
-        if (r.ok) payload.sha = (await r.json()).sha;
-      } catch(e) {}
-      const res = await fetch(API + "/" + path, {
-        method: "PUT",
-        headers: {Authorization: "token " + token, "Content-Type": "application/json"},
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw "Upload fail";
-      return RAW + "/" + path;
-    }
+    // stories.json
+    s.textContent = "Cập nhật danh sách..."; f.style.width = "95%";
+    const stories = await fetch("https://raw.githubusercontent.com/"+repo+"/main/stories.json?t="+Date.now()).then(r=>r.ok?r.json():[]);
+    const exist = stories.find(x=>x.id===id);
+    const chap = {name:document.getElementById("chap").value, images:urls};
+    if(exist) exist.chapters.push(chap);
+    else stories.push({id,title:document.getElementById("title").value,author:document.getElementById("author").value||"Không rõ",thumbnail:coverUrl,chapters:[chap]});
+    const json64 = btoa(unescape(encodeURIComponent(JSON.stringify(stories,null,2))));
+    await up("stories.json", json64);
 
-    async function getStories() {
-      const r = await fetch(RAW + "/stories.json?t=" + Date.now());
-      return r.ok ? await r.json() : [];
-    }
-    async function saveStories(d) {
-      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(d,null,2))));
-      const payload = {message: "update", content: b64, branch: "main"};
-      try {
-        const r = await fetch(API + "/stories.json", {headers: {Authorization: "token " + token}});
-        if (r.ok) payload.sha = (await r.json()).sha;
-      } catch(e) {}
-      await fetch(API + "/stories.json", {method:"PUT", headers:{Authorization:"token "+token,"Content-Type":"application/json"}, body:JSON.stringify(payload)});
-    }
-
-    async function upload() {
-      const s = document.getElementById("status");
-      const b = document.getElementById("progressBar");
-      try {
-        s.textContent = "Đang nén và upload..."; b.style.width = "5%";
-        const id = document.getElementById("id").value.trim().toLowerCase().replace(/[^a-z0-9]/g,"");
-        const title = document.getElementById("title").value.trim();
-        if (!title || !id) throw "Nhập tên + ID";
-
-        // Bìa
-        const coverFile = await compress(document.getElementById("cover").files[0]);
-        const coverExt = coverFile.name.slice(coverFile.name.lastIndexOf("."));
-        s.textContent = "Upload bìa..."; b.style.width = "25%";
-        const cover = await put("images/"+id+"_cover"+coverExt, coverFile);
-
-        // Chapter
-        const files = document.getElementById("chapterImages").files;
-        const urls = [];
-        for(let i=0; i<files.length; i++){
-          s.textContent = `Nén & upload ${i+1}/${files.length}...`;
-          const f = await compress(files[i]);
-          const ext = f.name.slice(f.name.lastIndexOf("."));
-          urls.push(await put("images/"+id+"_p"+(i+1)+ext, f));
-          b.style.width = 25 + 70*(i+1)/files.length + "%";
-        }
-
-        // stories.json
-        s.textContent = "Cập nhật danh sách..."; b.style.width = "95%";
-        const list = await getStories();
-        const exist = list.find(x=>x.id===id);
-        const chap = {name: document.getElementById("chap").value, images: urls};
-        if(exist) exist.chapters.push(chap);
-        else list.push({id, title, author: document.getElementById("author").value||"Không rõ", thumbnail: cover, chapters: [chap]});
-        await saveStories(list);
-
-        b.style.width = "100%";
-        s.innerHTML = "<b style='color:green'>HOÀN TẤT 100%!<br>Reload trang chủ là thấy truyện!</b>";
-      } catch(e) {
-        s.innerHTML = "<b style='color:red'>LỖI: "+e+"</b>";
-        b.style.width = "0%";
-      }
-    }
-
-    const d = document.getElementById("dropZone");
-    d.onclick = () => document.getElementById("chapterImages").click();
-    d.ondragover = e => e.preventDefault();
-    d.ondrop = e => {e.preventDefault(); document.getElementById("chapterImages").files = e.dataTransfer.files; d.innerHTML = `Đã chọn ${e.dataTransfer.files.length} ảnh`};
-    document.getElementById("chapterImages").onchange = () => d.innerHTML = `Đã chọn ${document.getElementById("chapterImages").files.length} ảnh`;
-  </script>
+    f.style.width = "100%";
+    s.innerHTML = "<b style='color:green'>HOÀN TẤT 100%!<br>Reload trang chủ là thấy truyện!</b>";
+  } catch(e) {
+    s.innerHTML = "<b style='color:red'>LỖI: "+e+"</b>";
+    f.style.width = "0%";
+  }
+}
+</script>
 </body>
 </html>
