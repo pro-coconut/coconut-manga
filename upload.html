@@ -23,15 +23,15 @@
     <h1>ĐĂNG TRUYỆN MỚI</h1>
     <div class="form">
       <input type="text" id="title" placeholder="Tên truyện (bắt buộc)" required>
-      <input type="text" id="id" placeholder="ID truyện (không dấu, ví dụ: onepiece)" required>
+      <input type="text" id="id" placeholder="ID (không dấu, vd: tavodich)" required>
       <input type="text" id="author" placeholder="Tác giả (không bắt buộc)">
       <input type="file" id="cover" accept="image/*" required>
       <input type="text" id="chap" placeholder="Tên chapter" value="Chapter 1">
-      <div class="drop" id="dropZone">Kéo thả ảnh chapter vào đây<br>hoặc nhấn để chọn nhiều ảnh</div>
+      <div class="drop" id="dropZone">Kéo thả ảnh chapter vào đây<br>hoặc nhấn chọn (tối đa 30 ảnh)</div>
       <input type="file" id="chapterImages" multiple accept="image/*" style="display:none">
       <button onclick="upload()">GỬI TRUYỆN NGAY</button>
       <div class="progress"><div class="bar" id="progressBar"></div></div>
-      <div id="status">Sẵn sàng đăng truyện</div>
+      <div id="status">Sẵn sàng</div>
     </div>
   </div>
 
@@ -45,23 +45,28 @@
     const API = "https://api.github.com/repos/pro-coconut/pro-coconut.github.io/contents";
     const RAW = "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main";
 
-    // Giữ nguyên đuôi file gốc
-    function getExt(file) { return file.name.slice(file.name.lastIndexOf(".")); }
+    // Lấy SHA riêng (không lồng nhau nữa)
+    async function getSha(path) {
+      try {
+        const r = await fetch(API + "/" + path, {headers: {Authorization: "token " + token}});
+        if (r.ok) return (await r.json()).sha;
+      } catch(e) {}
+      return null;
+    }
 
     async function put(path, file) {
-      const data = await file.arrayBuffer();
-      const b64 = btoa(String.fromCharCode(...new Uint8Array(data)));
-      const payload = { message: "upload", content: b64, branch: "main" };
-      try {
-        const r = await fetch(API + "/" + path, { headers: { Authorization: "token " + token } });
-        if (r.ok) payload.sha = (await r.json()).sha;
-      } catch(e) {}
+      const buf = await file.arrayBuffer();
+      const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+      const sha = await getSha(path);
+      const payload = {message: "upload", content: b64, branch: "main"};
+      if (sha) payload.sha = sha;
+
       const res = await fetch(API + "/" + path, {
         method: "PUT",
-        headers: { Authorization: "token " + token, "Content-Type": "application/json" },
+        headers: {Authorization: "token " + token, "Content-Type": "application/json"},
         body: JSON.stringify(payload)
       });
-      if (!res.ok) throw "Upload thất bại";
+      if (!res.ok) throw "Upload fail";
       return RAW + "/" + path;
     }
 
@@ -72,71 +77,73 @@
 
     async function saveStories(data) {
       const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
-      const payload = { message: "update stories", content: b64, branch: "main" };
-      try {
-        const r = await fetch(API + "/stories.json", { headers: { Authorization: "token " + token } });
-        if (r.ok) payload.sha = (await r.json()).sha;
-      } catch(e) {}
-      const res = await fetch(API + "/stories.json", {
+      const sha = await getSha("stories.json");
+      const payload = {message: "update stories", content: b64, branch: "main"};
+      if (sha) payload.sha = sha;
+      await fetch(API + "/stories.json", {
         method: "PUT",
-        headers: { Authorization: "token " + token, "Content-Type": "application/json" },
+        headers: {Authorization: "token " + token, "Content-Type": "application/json"},
         body: JSON.stringify(payload)
       });
-      if (!res.ok) throw "Lưu stories.json thất bại";
     }
 
     async function upload() {
       const status = document.getElementById("status");
       const bar = document.getElementById("progressBar");
       try {
-        status.textContent = "Đang chuẩn bị..."; bar.style.width = "5%";
+        status.textContent = "Kiểm tra..."; bar.style.width = "5%";
+        const files = document.getElementById("chapterImages").files;
+        if (files.length > 30) throw "Tối đa 30 ảnh/lần để tránh lỗi! Chia nhỏ chapter nhé.";
+
         const id = document.getElementById("id").value.trim().toLowerCase().replace(/[^a-z0-9]/g,"");
         const title = document.getElementById("title").value.trim();
-        if (!title || !id) throw "Nhập tên truyện và ID!";
-        if (!document.getElementById("cover").files[0]) throw "Chọn ảnh bìa!";
-        if (!document.getElementById("chapterImages").files.length) throw "Chọn ảnh chapter!";
+        if (!title || !id) throw "Nhập tên + ID";
 
+        // Bìa
+        status.textContent = "Upload bìa..."; bar.style.width = "20%";
         const coverFile = document.getElementById("cover").files[0];
-        const coverExt = getExt(coverFile);
-        status.textContent = "Upload bìa..."; bar.style.width = "25%";
+        const coverExt = coverFile.name.slice(coverFile.name.lastIndexOf("."));
         const cover = await put("images/"+id+"_cover"+coverExt, coverFile);
 
-        const files = document.getElementById("chapterImages").files;
+        // Chapter
         const urls = [];
-        for(let i=0; i<files.length; i++){
-          const ext = getExt(files[i]);
-          status.textContent = `Upload trang ${i+1}/${files.length}...`;
+        for (let i = 0; i < files.length; i++) {
+          const ext = files[i].name.slice(files[i].name.lastIndexOf("."));
+          status.textContent = `Upload ${i+1}/${files.length}...`;
           urls.push(await put("images/"+id+"_p"+(i+1)+ext, files[i]));
-          bar.style.width = 25 + 65*(i+1)/files.length + "%";
+          bar.style.width = (20 + 70*(i+1)/files.length) + "%";
         }
 
+        // stories.json
         status.textContent = "Cập nhật danh sách..."; bar.style.width = "95%";
         const list = await getStories();
-        const exist = list.find(x=>x.id===id);
-        const chapData = { name: document.getElementById("chap").value || "Chapter 1", images: urls };
-        if(exist) exist.chapters.push(chapData);
-        else list.push({id, title, author: document.getElementById("author").value||"Không rõ", thumbnail: cover, chapters: [chapData]});
+        const exist = list.find(x => x.id === id);
+        const chap = {name: document.getElementById("chap").value || "Chapter mới", images: urls};
+        if (exist) exist.chapters.push(chap);
+        else list.push({id, title, author: document.getElementById("author").value||"Không rõ", thumbnail: cover, chapters: [chap]});
         await saveStories(list);
 
         bar.style.width = "100%";
-        status.innerHTML = "<b style='color:green'>HOÀN TẤT 100%!<br>Reload trang chủ là thấy ngay!</b>";
+        status.innerHTML = "<b style='color:green'>HOÀN TẤT! Reload trang chủ là thấy truyện!</b>";
       } catch(e) {
         status.innerHTML = "<b style='color:red'>LỖI: "+e+"</b>";
         bar.style.width = "0%";
       }
     }
 
+    // Drag & drop
     const dropZone = document.getElementById("dropZone");
     dropZone.onclick = () => document.getElementById("chapterImages").click();
     dropZone.ondragover = e => e.preventDefault();
     dropZone.ondrop = e => {
       e.preventDefault();
       document.getElementById("chapterImages").files = e.dataTransfer.files;
-      dropZone.innerHTML = `<b>Đã chọn ${e.dataTransfer.files.length} ảnh</b>`;
+      const c = e.dataTransfer.files.length;
+      dropZone.innerHTML = c > 30 ? "<b style='color:red'>Quá 30 ảnh! Chia nhỏ chapter</b>" : `<b>Đã chọn ${c} ảnh</b>`;
     };
     document.getElementById("chapterImages").onchange = () => {
       const c = document.getElementById("chapterImages").files.length;
-      if(c>0) dropZone.innerHTML = `<b>Đã chọn ${c} ảnh</b>`;
+      dropZone.innerHTML = c > 30 ? "<b style='color:red'>Quá 30 ảnh!</b>" : `<b>Đã chọn ${c} ảnh</b>`;
     };
   </script>
 </body>
