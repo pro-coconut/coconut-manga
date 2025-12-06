@@ -18,10 +18,13 @@ HEADERS = {
 }
 
 # ----------------------------
-# TOKEN CỨNG
+# TOKEN CỨNG + REPO
 # ----------------------------
-# Thay token của bạn vào đây
+# Thay token và repo URL của bạn
 GITHUB_TOKEN = "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"
+GITHUB_USER = "pro-coconut"
+REPO_NAME = "pro-coconut.github.io"
+REPO_URL = f"https://{GITHUB_USER}:{GITHUB_TOKEN}@github.com/{GITHUB_USER}/{REPO_NAME}.git"
 
 # ----------------------------
 # UTILITIES
@@ -104,18 +107,16 @@ def scrape_story(story_url, existing_chapters=None):
     }
 
 # ----------------------------
-# PUSH TO GITHUB USING TOKEN
+# PUSH TO GITHUB USING TOKEN CỨNG
 # ----------------------------
 def push_to_github():
     repo = Repo(".")
-    remote = repo.remote(name="origin")
-
-    token_url = f"https://{GITHUB_TOKEN}@github.com/pro-coconut/pro-coconut.github.io.git"
-    remote.set_url(token_url)
+    origin = repo.remote(name="origin")
+    origin.set_url(REPO_URL)
 
     repo.git.add(STORIES_FILE)
     repo.index.commit("Update stories.json via bot")
-    remote.push()
+    origin.push()
     print("[INFO] stories.json pushed successfully!")
 
 # ----------------------------
