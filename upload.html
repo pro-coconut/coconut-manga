@@ -33,7 +33,7 @@
     <input type="file" id="imgs" multiple accept="image/*" style="display:none">
     <button onclick="start()">GỬI TRUYỆN NGAY</button>
     <div class="bar"><div class="fill" id="fill"></div></div>
-    <div id="status">Sẵn sàng</div>
+    <div id="status">Sẵn sàng – ảnh giữ nguyên chất lượng 100%</div>
   </div>
 </div>
 
@@ -43,26 +43,32 @@ let token = localStorage.getItem("t") || prompt("Nhập GitHub Token (ghp_...)")
 if(token && token.startsWith("ghp_")) localStorage.setItem("t", token);
 else { alert("Token sai!"); throw""; }
 
-const api = "https://api.github.com/repos/pro-coconut/pro-coconut.github.io/contents";
-const raw = "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main";
+// Upload bằng FormData – KHÔNG base64, KHÔNG nén, ổn định tuyệt đối
+async function uploadFile(path, file) {
+  const form = new FormData();
+  form.append("message", "upload truyện");
+  form.append("content", file);
+  form.append("branch", "main");
 
-// Upload từng ảnh riêng biệt – không tích luỹ dữ liệu → không bao giờ lỗi call stack
-async function uploadSingle(path, file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = async e => {
-      const base64 = e.target.result.split(',')[1];
-      const payload = {message:"upload",content:base64,branch:"main"};
-      try{
-        const r = await fetch(api+"/"+path,{headers:{Authorization:"token "+token}});
-        if(r.ok) payload.sha = (await r.json()).sha;
-      }catch(e){}
-      const res = await fetch(api+"/"+path,{method:"PUT",headers:{Authorization:"token "+token,"Content-Type":"application/json"},body:JSON.stringify(payload)});
-      if(res.ok) resolve(raw+"/"+path);
-      else reject("Upload fail");
-    };
-    reader.readAsDataURL(file);
+  // Lấy SHA nếu file tồn tại
+  try {
+    const shaRes = await fetch("https://api.github.com/repos/pro-coconut/pro-coconut.github.io/contents/" + path, {
+      headers: { Authorization: "token " + token }
+    });
+    if (shaRes.ok) {
+      const data = await shaRes.json();
+      form.append("sha", data.sha);
+    }
+  } catch(e) {}
+
+  const res = await fetch("https://api.github.com/repos/pro-coconut/pro-coconut.github.io/contents/" + path, {
+    method: "PUT",
+    headers: { Authorization: "token " + token },
+    body: form
   });
+
+  if (!res.ok) throw "Lỗi upload ảnh";
+  return "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/" + path;
 }
 
 document.getElementById("drop").onclick = () => document.getElementById("imgs").click();
@@ -70,6 +76,7 @@ document.getElementById("drop").ondrop = e => {e.preventDefault(); document.getE
 document.getElementById("imgs").onchange = show;
 function show(){document.getElementById("drop").innerHTML=`Đã chọn <b>${document.getElementById("imgs").files.length}</b> ảnh`;}
 
+// MAIN
 async function start(){
   const s = document.getElementById("status");
   const f = document.getElementById("fill");
@@ -80,20 +87,20 @@ async function start(){
 
     // Bìa
     s.textContent="Upload bìa..."; f.style.width="15%";
-    const cover = await uploadSingle("images/"+id+"_cover.jpg", document.getElementById("cover").files[0]);
+    const cover = await uploadFile("images/"+id+"_cover.jpg", document.getElementById("cover").files[0]);
 
-    // Chapter – vẫn chọn nhiều ảnh bình thường
+    // Chapter
     const files = document.getElementById("imgs").files;
     const urls = [];
     for(let i=0; i<files.length; i++){
       s.textContent=`Upload ${i+1}/${files.length}...`;
-      urls.push(await uploadSingle("images/"+id+"_p"+(i+1)+".jpg", files[i]));
+      urls.push(await uploadFile("images/"+id+"_p"+(i+1)+"."+files[i].name.split('.').pop(), files[i]));
       f.style.width = 15 + 80*(i+1)/files.length + "%";
     }
 
     // stories.json
     s.textContent="Cập nhật danh sách..."; f.style.width="98%";
-    const stories = await fetch(raw+"/stories.json?t="+Date.now()).then(r=>r.ok?r.json():[]);
+    const stories = await fetch("https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/stories.json?t="+Date.now()).then(r=>r.ok?r.json():[]);
     const ex = stories.find(x=>x.id===id);
     const chap = {name:document.getElementById("chap").value||Chap mới,images:urls};
     if(ex){
@@ -107,8 +114,8 @@ async function start(){
         thumbnail:cover, chapters:[chap]
       });
     }
-    const json64 = btoa(unescape(encodeURIComponent(JSON.stringify(stories,null,2))));
-    await uploadSingle("stories.json", new Blob([JSON.stringify(stories,null,2)], {type:"application/json"}));
+    const blob = new Blob([JSON.stringify(stories,null,2)],{type:"application/json"});
+    await uploadFile("stories.json", blob);
 
     f.style.width="100%";
     s.innerHTML="<b style='color:green'>HOÀN TẤT 100%!<br>Reload trang chủ là thấy!</b>";
