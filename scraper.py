@@ -8,14 +8,14 @@ from git import Repo
 # ----------------------------
 # CONFIG
 # ----------------------------
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-REPO_URL = "https://github.com/<your-username>/pro-coconut.github.io.git"
+REPO_URL = "https://github.com/pro-coconut/pro-coconut.github.io.git"
 LOCAL_REPO = "pro-coconut-site"
 STORIES_FILE = "stories.json"
 
 START_PAGE = 1
 MAX_PAGES = 5
 MAX_CHAPTERS_PER_RUN = 50
+STORIES_PER_RUN = 3
 BATCH_SIZE = 5
 RUN_INTERVAL_MINUTES = 30
 
@@ -23,6 +23,13 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0",
     "Accept": "*/*",
 }
+
+# ----------------------------
+# GET TOKEN INPUT
+# ----------------------------
+GITHUB_TOKEN = input("Nhập GitHub Personal Access Token: ").strip()
+if not GITHUB_TOKEN:
+    raise ValueError("Bạn phải nhập token để bot có thể push lên GitHub!")
 
 # ----------------------------
 # UTILITIES
@@ -33,8 +40,10 @@ def safe_get(url):
             r = requests.get(url, headers=HEADERS, timeout=12)
             if r.status_code == 200:
                 return r
+            print("WARNING: status", r.status_code, "for", url)
             time.sleep(2)
-        except:
+        except Exception as e:
+            print("WARNING request error:", e)
             time.sleep(2)
     return None
 
@@ -47,17 +56,19 @@ def scrape_chapter(url):
     return [img.get("src") or img.get("data-src") for img in imgs if img.get("src") or img.get("data-src")]
 
 def load_stories():
-    if not os.path.exists(os.path.join(LOCAL_REPO, STORIES_FILE)):
+    path = os.path.join(LOCAL_REPO, STORIES_FILE)
+    if not os.path.exists(path):
         return []
-    with open(os.path.join(LOCAL_REPO, STORIES_FILE), "r", encoding="utf8") as f:
+    with open(path, "r", encoding="utf8") as f:
         return json.load(f)
 
 def save_stories(data):
-    with open(os.path.join(LOCAL_REPO, STORIES_FILE), "w", encoding="utf8") as f:
+    path = os.path.join(LOCAL_REPO, STORIES_FILE)
+    with open(path, "w", encoding="utf8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 # ----------------------------
-# SCRAPER STORY
+# SCRAPE STORY
 # ----------------------------
 def scrape_story(story_url, existing_chapters=None):
     full_url = story_url if story_url.startswith("http") else "https://nettruyen0209.com" + story_url
@@ -67,7 +78,8 @@ def scrape_story(story_url, existing_chapters=None):
         return None
 
     soup = BeautifulSoup(r.text, "lxml")
-    title = soup.select_one("h1.title-detail").text.strip()
+    title_tag = soup.select_one("h1.title-detail")
+    title = title_tag.text.strip() if title_tag else "Không rõ"
     author_tag = soup.select_one("p.author a")
     author = author_tag.text.strip() if author_tag else "Không rõ"
     desc_tag = soup.select_one("div.detail-content p")
@@ -82,11 +94,12 @@ def scrape_story(story_url, existing_chapters=None):
         text = a.text.lower().strip()
         if text.startswith("chapter"):
             try:
-                n = int(text.replace("chapter", "").strip())
+                n = int(text.replace("chapter","").strip())
                 if n > max_chapter:
                     max_chapter = n
             except:
                 continue
+
     start_chapter = 1
     if existing_chapters:
         scraped_nums = [int(c["name"].replace("Chapter","").strip()) for c in existing_chapters if c["name"].lower().startswith("chapter")]
@@ -94,30 +107,32 @@ def scrape_story(story_url, existing_chapters=None):
 
     end_chapter = max_chapter if MAX_CHAPTERS_PER_RUN is None else min(max_chapter, MAX_CHAPTERS_PER_RUN)
     if start_chapter > end_chapter:
-        return {"id": story_id,"title": title,"author": author,"description": description,"thumbnail": thumbnail,"chapters":[]}
+        return {"id": story_id, "title": title, "author": author, "description": description, "thumbnail": thumbnail, "chapters":[]}
 
     chapters = []
     for i in range(start_chapter, end_chapter+1):
-        url = f"{full_url}/chapter-{i}"
-        imgs = scrape_chapter(url)
+        chapter_url = f"{full_url}/chapter-{i}"
+        imgs = scrape_chapter(chapter_url)
         if imgs:
             chapters.append({"name": f"Chapter {i}", "images": imgs})
         time.sleep(0.5)
-    return {"id": story_id,"title": title,"author": author,"description": description,"thumbnail": thumbnail,"chapters": chapters}
+
+    return {"id": story_id, "title": title, "author": author, "description": description, "thumbnail": thumbnail, "chapters": chapters}
 
 # ----------------------------
-# GITHUB UPLOAD
+# PUSH TO GITHUB
 # ----------------------------
 def push_to_github():
     if not os.path.exists(LOCAL_REPO):
-        Repo.clone_from(f"https://{GITHUB_TOKEN}@github.com/<your-username>/pro-coconut.github.io.git", LOCAL_REPO)
+        Repo.clone_from(f"https://{GITHUB_TOKEN}@github.com/pro-coconut/pro-coconut.github.io.git", LOCAL_REPO)
     repo = Repo(LOCAL_REPO)
     repo.git.add(STORIES_FILE)
-    repo.index.commit(f"Update stories.json")
+    repo.index.commit("Update stories.json via bot")
     repo.remote().push()
+    print("stories.json pushed to GitHub Pages!")
 
 # ----------------------------
-# MAIN BOT
+# RUN SCRAPER
 # ----------------------------
 def run_scraper():
     stories = load_stories()
@@ -154,7 +169,7 @@ def run_scraper():
         if added >= STORIES_PER_RUN:
             break
     push_to_github()
-    print("Bot run finished, stories pushed to GitHub!")
+    print("Bot run finished.")
 
 # ----------------------------
 # AUTO RUN
