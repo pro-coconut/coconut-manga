@@ -1,27 +1,36 @@
-name: Run Scraper
+name: Auto Scraper Bot
 
 on:
   schedule:
-    - cron: "*/30 * * * *" # chạy mỗi 30 phút
-  workflow_dispatch:
+    # Chạy mỗi 30 phút
+    - cron: "*/30 * * * *"
+  workflow_dispatch:  # cho phép run thủ công
 
 jobs:
   scraper:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
+    steps:
+      # Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Setup Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: "3.11"
+          cache: "pip"
 
+      # Install dependencies
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
+          pip install --upgrade pip
           pip install requests beautifulsoup4 lxml GitPython
 
-      - name: Run Scraper
+      # Run scraper
+      - name: Run scraper
         env:
           GITHUB_TOKEN_BOT: ${{ secrets.MY_GITHUB_TOKEN }}
-        run: python scraper.py
+        run: |
+          python scraper_multithread_fixed.py
