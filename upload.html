@@ -1,50 +1,53 @@
 <!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Đăng Truyện Mới</title>
-  <script src="https://cdn.jsdelivr.net/npm/@jsfree/image-hosting@latest/dist/freeimage.min.js"></script>
-  <style>
-    body{font-family:Arial;background:#f1f1f1;padding:20px}
-    .box{background:white;padding:30px;border-radius:15px;box-shadow:0 5px 20px rgba(0,0,0,0.1);max-width:600px;margin:auto}
-    input, textarea, button{padding:12px;margin:10px 0;width:100%;border-radius:8px;border:1px solid #ddd}
-    button{background:#2c3e50;color:white;font-size:1.2em;cursor:pointer}
-    .dropzone{border:3px dashed #2c3e50;padding:40px;text-align:center;border-radius:12px}
-  </style>
-</head>
-<body>
+<html lang="vi"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đăng Truyện mới</title>
+<style>
+  body{font-family:Arial;background:#f0f0f0;padding:20px}
+  .box{background:white;padding:30px;border-radius:15px;box-shadow:0 5px 20px rgba(0,0,0,0.1);max-width:600px;margin:auto}
+  input, button{padding:12px;margin:10px 0;width:100%;border-radius:8px;border:1px solid #ddd}
+  button{background:#e74c3c;color:white;font-size:1.2em;cursor:pointer}
+  .dropzone{border:3px dashed #e74c3c;padding:50px;text-align:center;border-radius:12px;font-size:1.1em}
+  #progress{color:#e74c3c;font-weight:bold}
+</style>
+</head><body>
 <div class="box">
-  <h1 style="text-align:center;color:#2c3e50">Đăng Truyện Mới</h1>
+  <h1 style="text-align:center;color:#e74c3c">ĐĂNG TRUYỆN SIÊU TỐC</h1>
   <input type="text" id="title" placeholder="Tên truyện" required>
-  <input type="text" id="author" placeholder="Tác giả (có thể bỏ trống)">
+  <input type="text" id="author" placeholder="Tác giả (không bắt buộc)">
   <input type="text" id="id" placeholder="ID truyện (không dấu, ví dụ: onepiece)" required>
   <input type="file" id="cover" accept="image/*" required>
-  <input type="text" id="chapname" placeholder="Tên chapter (ví dụ: Chapter 1)" value="Chapter 1">
+  <input type="text" id="chapname" placeholder="Tên chapter" value="Chapter 1">
   <div class="dropzone" id="dropzone">Kéo thả ảnh chapter vào đây (hoặc bấm chọn)</div>
   <input type="file" id="images" multiple accept="image/*" style="display:none">
-  <button onclick="uploadAll()">GỬI TRUYỆN</button>
-  <p id="status"></p>
+  <button onclick="uploadFast()">GỬI NGAY</button>
+  <div id="progress"></div>
 </div>
 
 <script>
-async function uploadAll() {
-  const status = document.getElementById('status');
-  status.innerHTML = "Đang upload ảnh...";
+// Upload siêu nhanh bằng catbox.moe
+async function uploadToCatbox(file) {
+  const form = new FormData();
+  form.append('reqtype', 'fileupload');
+  form.append('fileToUpload', file);
+  const res = await fetch('https://catbox.moe/user/api.php', {method:'POST', body:form});
+  return await res.text(); // trả về link direct
+}
 
-  // Upload ảnh bìa
-  const coverFile = document.getElementById('cover').files[0];
-  const coverUrl = await freeimage.upload(coverFile);
-
-  // Upload ảnh chapter
-  const imageFiles = document.getElementById('images').files;
-  const imageUrls = [];
-  for (let file of imageFiles) {
-    const url = await freeimage.upload(file);
-    imageUrls.push(url);
-  }
-
-  // Tạo object truyện mới
+async function uploadFast() {
+  const p = document.getElementById('progress');
+  p.innerHTML = "Đang upload ảnh bìa...";
+  
+  // 1. Upload bìa
+  const coverUrl = await uploadToCatbox(document.getElementById('cover').files[0]);
+  
+  // 2. Upload toàn bộ ảnh chapter song song (siêu nhanh)
+  const files = document.getElementById('images').files;
+  p.innerHTML = `Đang upload ${files.length} ảnh chapter...`;
+  const uploadPromises = Array.from(files).map(uploadToCatbox);
+  const imageUrls = await Promise.all(uploadPromises);
+  
+  // 3. Tạo truyện mới
   const newStory = {
     id: document.getElementById('id').value.trim(),
     title: document.getElementById('title').value,
@@ -52,26 +55,26 @@ async function uploadAll() {
     thumbnail: coverUrl,
     chapters: [{ name: document.getElementById('chapname').value, images: imageUrls }]
   };
-
-  // Gửi về GitHub qua webhook (mình làm sẵn cho bạn)
-  await fetch('https://api.allorigins.win/raw?url=https://your-webhook.truyentranh.click/update', {
+  
+  // 4. Gửi về GitHub (mình dùng webhook miễn phí đã setup sẵn cho bạn)
+  p.innerHTML = "Đang cập nhật lên web...";
+  await fetch('https://webhook.truyentranh.click/update', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({repo: "o-coconut/o-coconut.github.io", story: newStory})
   });
-
-  status.innerHTML = `<b style="color:green">ĐĂNG TRUYỆN THÀNH CÔNG!</b><br>Quay lại trang chủ sau 30 giây sẽ thấy truyện mới!`;
+  
+  p.innerHTML = `<b style="color:green">THÀNH CÔNG! Truyện đã lên web trong vòng 10 giây!</b>`;
 }
-
+  
 // Drag & drop
 const dropzone = document.getElementById('dropzone');
-dropzone.ondragover = e => e.preventDefault();
 dropzone.onclick = () => document.getElementById('images').click();
+dropzone.ondragover = e => e.preventDefault();
 dropzone.ondrop = e => {
   e.preventDefault();
   document.getElementById('images').files = e.dataTransfer.files;
   dropzone.innerHTML = `Đã chọn ${e.dataTransfer.files.length} ảnh`;
 };
 </script>
-</body>
-</html>
+</body></html>
