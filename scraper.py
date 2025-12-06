@@ -13,6 +13,18 @@ DOMAIN = "https://nettruyen0209.com"
 LIST_URL = DOMAIN + "/danh-sach-truyen/{page}/?sort=last_update&status=0"
 
 POSTED_FILE = "posted.json"
+HEADERS = {"User-Agent": "Mozilla/5.0"}
+
+
+# ==============================
+# Safe GET (không bao giờ treo)
+# ==============================
+def safe_get(url):
+    try:
+        return requests.get(url, headers=HEADERS, timeout=10)
+    except Exception as e:
+        print("❌ Request failed:", url, "-", e)
+        return None
 
 
 # ==============================
@@ -21,8 +33,7 @@ POSTED_FILE = "posted.json"
 def load_posted():
     if not os.path.exists(POSTED_FILE):
         return []
-    with open(POSTED_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    return json.load(open(POSTED_FILE, "r", encoding="utf-8"))
 
 
 def save_posted(lst):
@@ -33,54 +44,54 @@ def save_posted(lst):
 # ==============================
 # Lấy danh sách link truyện
 # ==============================
-def get_story_links():
+def get_story_links(limit):
+    """
+    Trả về đúng 'limit' link truyện mới → để bot không quét vô hạn
+    """
     links = []
 
-    print("=== 🔍 SCANNING FOR STORIES ===")
+    print("=== 🔍 SCANNING STORIES ===")
 
     for page in range(START_PAGE, MAX_PAGES + 1):
+        if len(links) >= limit:
+            break
+
         url = LIST_URL.format(page=page)
         print(f"📄 Checking page {page}: {url}")
 
-        try:
-            html = requests.get(url, timeout=10).text
-        except:
-            print("❌ Failed to load page")
+        res = safe_get(url)
+        if not res:
             continue
 
-        soup = BeautifulSoup(html, "lxml")
+        soup = BeautifulSoup(res.text, "lxml")
         items = soup.select("div.item figure a")
 
-        if not items:
-            print("⚠ No more items → stop scan")
-            break
-
         for a in items:
+            if len(links) >= limit:
+                break
+
             link = a.get("href")
             if link.startswith("/"):
                 link = DOMAIN + link
             links.append(link)
 
-        print(f"➕ Added {len(items)} links from page {page}")
-        time.sleep(0.5)
+        time.sleep(0.2)
 
-    print(f"🎉 TOTAL LINKS FOUND: {len(links)}")
+    print(f"🎉 FOUND {len(links)} LINKS")
     return links
 
 
 # ==============================
-# Lấy hình ảnh chapter
+# Lấy hình chapter
 # ==============================
-def scrape_chapter_images(url):
-    try:
-        html = requests.get(url, timeout=10).text
-    except:
-        print("❌ Cannot load chapter:", url)
+def scrape_chapter_images(ch_url):
+    res = safe_get(ch_url)
+    if not res:
         return []
 
-    soup = BeautifulSoup(html, "lxml")
-
+    soup = BeautifulSoup(res.text, "lxml")
     imgs = []
+
     for img in soup.select(".page-chapter img"):
         src = img.get("data-src") or img.get("src")
         if src:
@@ -92,19 +103,17 @@ def scrape_chapter_images(url):
 
 
 # ==============================
-# Scrap full truyện + chapter
+# Scrap 1 truyện
 # ==============================
 def scrape_story(url):
     print("\n=== 📘 SCRAPING STORY ===")
     print(url)
 
-    try:
-        html = requests.get(url, timeout=10).text
-    except:
-        print("❌ Cannot load story URL")
+    res = safe_get(url)
+    if not res:
         return None
 
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(res.text, "lxml")
 
     title = soup.select_one(".title-detail")
     title = title.text.strip() if title else "No Title"
@@ -118,22 +127,19 @@ def scrape_story(url):
     chapters = []
     ch_nodes = soup.select(".list-chapter li a")
 
-    for c in ch_nodes:
+    for c in ch_nodes[::-1]:  # đảo để chapter cũ trước
         ch_name = c.text.strip()
         ch_url = c.get("href")
-        if not ch_url:
-            continue
+
         if ch_url.startswith("/"):
             ch_url = DOMAIN + ch_url
 
-        chapter_imgs = scrape_chapter_images(ch_url)
+        imgs = scrape_chapter_images(ch_url)
 
         chapters.append({
             "chapter": ch_name,
-            "images": chapter_imgs
+            "images": imgs
         })
-
-        time.sleep(0.3)
 
     return {
         "name": title,
@@ -147,22 +153,18 @@ def scrape_story(url):
 # Upload API
 # ==============================
 def upload_story(data):
-    if not API_BASE:
-        print("❌ API_BASE_URL missing!")
-        return False
-
     try:
-        res = requests.post(f"{API_BASE}/api/stories/create", json=data)
-        print(f"📤 API Response: {res.status_code} - {res.text}")
-
+        res = requests.post(
+            f"{API_BASE}/api/stories/create",
+            json=data,
+            timeout=10
+        )
+        print("📤 API:", res.status_code, res.text)
         if res.status_code != 200:
             return False
-
-        j = res.json()
-        return j.get("success") is True
-
+        return res.json().get("success", False)
     except Exception as e:
-        print("❌ API upload error:", e)
+        print("❌ API Error:", e)
         return False
 
 
@@ -171,22 +173,18 @@ def upload_story(data):
 # ==============================
 def main():
     posted = load_posted()
-    all_links = get_story_links()
 
-    new_links = [l for l in all_links if l not in posted]
-
-    if not new_links:
-        print("🎉 No new stories left.")
-        return
-
-    print(f"\n📌 Stories remaining: {len(new_links)}")
-    print(f"🚀 Will upload next {STORIES_PER_RUN} stories")
+    # chỉ tìm đúng 3 truyện cần đăng
+    links = get_story_links(STORIES_PER_RUN)
 
     uploaded = 0
 
-    for url in new_links:
+    for url in links:
         if uploaded >= STORIES_PER_RUN:
             break
+
+        if url in posted:
+            continue
 
         data = scrape_story(url)
         if not data:
@@ -194,11 +192,9 @@ def main():
 
         if upload_story(data):
             posted.append(url)
-            uploaded += 1
             save_posted(posted)
+            uploaded += 1
             print(f"✅ Uploaded {uploaded}/{STORIES_PER_RUN}")
-
-        time.sleep(1)
 
     print("\n🎯 DONE.")
 
