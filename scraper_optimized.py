@@ -8,10 +8,6 @@ from git import Repo
 # ----------------------------
 # CONFIG
 # ----------------------------
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN_BOT")
-if not GITHUB_TOKEN:
-    raise ValueError("Missing GitHub token! Set secret MY_GITHUB_TOKEN and map to GITHUB_TOKEN_BOT in workflow.")
-
 STORIES_FILE = "stories.json"
 MAX_STORIES_PER_RUN = 3       # số truyện scrape mỗi run
 MAX_CHAPTERS_PER_STORY = 10   # số chapter mới scrape mỗi truyện
@@ -20,6 +16,17 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0",
     "Accept": "*/*",
 }
+
+# ----------------------------
+# TOKEN INPUT
+# ----------------------------
+def get_github_token():
+    token = input("Nhập GitHub token (PAT, repo scope) để push: ").strip()
+    if not token:
+        raise ValueError("Token trống! Hãy nhập token hợp lệ.")
+    return token
+
+GITHUB_TOKEN = get_github_token()
 
 # ----------------------------
 # UTILITIES
