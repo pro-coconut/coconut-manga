@@ -1,17 +1,13 @@
-name: NetTruyen Scraper Bot
+name: Run Scraper
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: "*/30 * * * *"
-
-permissions:
-  contents: write
+    - cron: "*/30 * * * *" # mỗi 30 phút
+  workflow_dispatch:
 
 jobs:
   scraper:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -19,27 +15,13 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
-          cache: pip
 
       - name: Install dependencies
-        run: pip install requests beautifulsoup4 lxml
-
-      - name: Run scraper
-        env:
-          API_BASE_URL: ${{ secrets.API_BASE_URL }}
-          START_PAGE: 1
-          MAX_PAGES: 5
-          STORIES_PER_RUN: 3
-        run: python -u scraper.py
-
-      - name: Commit stories.json
         run: |
-          if [[ -n "$(git status --porcelain)" ]]; then
-            git config --local user.email "actions@github.com"
-            git config --local user.name "GitHub Actions"
-            git add stories.json
-            git commit -m "update stories list"
-            git push
-          else
-            echo "No changes."
-          fi
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 lxml GitPython
+
+      - name: Run Scraper
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_BOT }}
+        run: python scraper.py
