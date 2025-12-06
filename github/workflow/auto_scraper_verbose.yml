@@ -1,36 +1,36 @@
 name: Auto Scraper Bot Verbose
 
+# Chạy tự động + run thủ công
 on:
   schedule:
-    # Chạy mỗi 30 phút
-    - cron: "*/30 * * * *"
-  workflow_dispatch:  # cho phép run thủ công
+    - cron: "*/30 * * * *"  # mỗi 30 phút
+  workflow_dispatch:        # run thủ công từ tab Actions
 
 jobs:
   scraper:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout repo
+      # 1. Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Setup Python
-      - name: Setup Python
+      # 2. Setup Python
+      - name: Setup Python 3.11
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
           cache: "pip"
 
-      # Install dependencies
+      # 3. Cài đặt thư viện cần thiết
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install requests beautifulsoup4 lxml GitPython
 
-      # Run verbose scraper
-      - name: Run verbose scraper
+      # 4. Run scraper verbose
+      - name: Run scraper verbose
         env:
-          GITHUB_TOKEN_BOT: ${{ secrets.MY_GITHUB_TOKEN }}
+          GITHUB_TOKEN_BOT: ${{ secrets.MY_GITHUB_TOKEN }}  # token từ secret
         run: |
           python scraper_multithread_verbose.py
