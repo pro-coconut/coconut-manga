@@ -3,12 +3,18 @@ import json
 import time
 import requests
 from bs4 import BeautifulSoup
+import threading
 
+# ----------------------------
+# CONFIG
+# ----------------------------
 API_BASE_URL = os.getenv("API_BASE_URL")
 START_PAGE = int(os.getenv("START_PAGE", 1))
 MAX_PAGES = int(os.getenv("MAX_PAGES", 5))
 STORIES_PER_RUN = int(os.getenv("STORIES_PER_RUN", 3))
 BATCH_SIZE = 5
+MAX_CHAPTERS_PER_STORY = None  # None = scrape tất cả chapter
+RUN_INTERVAL_MINUTES = 30      # Auto run mỗi 30 phút
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0",
@@ -18,18 +24,15 @@ HEADERS = {
 STORIES_FILE = "stories.json"
 
 # ----------------------------
-# Load / Save stories.json
+# UTILITIES
 # ----------------------------
-
 def load_stories():
     if not os.path.exists(STORIES_FILE):
         return []
     try:
         with open(STORIES_FILE, "r", encoding="utf8") as f:
             data = json.load(f)
-            if isinstance(data, list):
-                return data
-            return []
+            return data if isinstance(data, list) else []
     except Exception as e:
         print("ERROR loading stories.json:", e)
         return []
@@ -40,10 +43,6 @@ def save_stories(data):
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print("ERROR saving stories.json:", e)
-
-# ----------------------------
-# Safe request
-# ----------------------------
 
 def safe_get(url):
     for _ in range(4):
@@ -58,10 +57,6 @@ def safe_get(url):
             time.sleep(2)
     return None
 
-# ----------------------------
-# Scrape chapter images
-# ----------------------------
-
 def scrape_chapter(url):
     r = safe_get(url)
     if not r:
@@ -71,10 +66,9 @@ def scrape_chapter(url):
     return [img.get("src") or img.get("data-src") for img in imgs if img.get("src") or img.get("data-src")]
 
 # ----------------------------
-# Scrape story
+# SCRAPER
 # ----------------------------
-
-def scrape_story(story_url):
+def scrape_story(story_url, existing_chapters=None):
     full_url = story_url if story_url.startswith("http") else "https://nettruyen0209.com" + story_url
 
     r = safe_get(full_url)
@@ -84,23 +78,18 @@ def scrape_story(story_url):
 
     soup = BeautifulSoup(r.text, "lxml")
 
-    # Title
     title_tag = soup.select_one("h1.title-detail")
     title = title_tag.text.strip() if title_tag else "Không rõ"
 
-    # Author
     author_tag = soup.select_one("p.author a")
     author = author_tag.text.strip() if author_tag else "Không rõ"
 
-    # Description
     desc_tag = soup.select_one("div.detail-content p")
     description = desc_tag.text.strip() if desc_tag else ""
 
-    # Thumbnail
     thumb_tag = soup.select_one("div.detail-info img")
     thumbnail = thumb_tag.get("src") if thumb_tag else ""
 
-    # ID từ slug URL
     story_id = story_url.rstrip("/").split("/")[-1]
 
     # Lấy max chapter
@@ -120,11 +109,33 @@ def scrape_story(story_url):
         print("ERROR: cannot determine max chapter for", title)
         return None
 
-    print(f"Found {max_chapter} chapters for {title}")
+    # Tính chapter cần scrape
+    start_chapter = 1
+    if existing_chapters:
+        scraped_nums = []
+        for c in existing_chapters:
+            if c.lower().startswith("chapter"):
+                try:
+                    n = int(c.lower().replace("chapter", "").strip())
+                    scraped_nums.append(n)
+                except:
+                    continue
+        start_chapter = max(scraped_nums + [0]) + 1
 
-    # Tạo chapters list
+    end_chapter = max_chapter if MAX_CHAPTERS_PER_STORY is None else min(max_chapter, MAX_CHAPTERS_PER_STORY)
+    if start_chapter > end_chapter:
+        print("All chapters already scraped for", title)
+        return {
+            "id": story_id,
+            "title": title,
+            "author": author,
+            "description": description,
+            "thumbnail": thumbnail,
+            "chapters": []
+        }
+
     chapters = []
-    for i in range(1, max_chapter + 1):
+    for i in range(start_chapter, end_chapter + 1):
         chapter_url = f"{full_url}/chapter-{i}"
         images = scrape_chapter(chapter_url)
         if len(images) == 0:
@@ -135,10 +146,6 @@ def scrape_story(story_url):
             "images": images
         })
         time.sleep(1)
-
-    if len(chapters) == 0:
-        print("ERROR: no chapters with images found for", title)
-        return None
 
     story_data = {
         "id": story_id,
@@ -152,12 +159,11 @@ def scrape_story(story_url):
     return story_data
 
 # ----------------------------
-# MAIN
+# MAIN SCRAPER RUN
 # ----------------------------
-
-def main():
+def run_scraper():
     stories = load_stories()
-    posted_ids = {s["id"] for s in stories if "id" in s}
+    story_dict = {s["id"]: s for s in stories if "id" in s}
 
     added = 0
 
@@ -182,17 +188,25 @@ def main():
 
         for story_url in story_links:
             story_id = story_url.rstrip("/").split("/")[-1]
-            if story_id in posted_ids:
-                continue
+            existing_chapters = None
+            if story_id in story_dict:
+                existing_chapters = [c["name"] for c in story_dict[story_id].get("chapters", [])]
 
             print("\n== SCRAPE:", story_url, "==")
-            story_data = scrape_story(story_url)
+            story_data = scrape_story(story_url, existing_chapters=existing_chapters)
             if not story_data:
                 print("FAILED story, skip.")
                 continue
 
-            stories.append(story_data)
-            save_stories(stories)
+            # Nếu truyện đã có, append chapter mới
+            if story_id in story_dict:
+                story_dict[story_id]["chapters"].extend(story_data["chapters"])
+                # Sắp xếp chapter theo số
+                story_dict[story_id]["chapters"].sort(key=lambda x: int(x["name"].replace("Chapter", "").strip()))
+            else:
+                story_dict[story_id] = story_data
+
+            save_stories(list(story_dict.values()))
             added += 1
 
             if added >= STORIES_PER_RUN:
@@ -203,5 +217,28 @@ def main():
 
     print("\nEND — no more stories.")
 
+# ----------------------------
+# AUTO RUN THREAD
+# ----------------------------
+def auto_run():
+    while True:
+        print("\n===== BOT RUN START =====")
+        try:
+            run_scraper()
+        except Exception as e:
+            print("ERROR in scraper run:", e)
+        print(f"Bot sleeping for {RUN_INTERVAL_MINUTES} minutes...\n")
+        time.sleep(RUN_INTERVAL_MINUTES * 60)
+
+# ----------------------------
+# START BOT
+# ----------------------------
 if __name__ == "__main__":
-    main()
+    print("Starting auto scraper bot...")
+    # Chạy bot trong thread để có thể mở rộng nếu muốn GUI hoặc web interface sau này
+    t = threading.Thread(target=auto_run, daemon=True)
+    t.start()
+
+    # Giữ main thread sống
+    while True:
+        time.sleep(60)
