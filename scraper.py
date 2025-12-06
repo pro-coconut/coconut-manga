@@ -30,15 +30,19 @@ def load_stories():
             if isinstance(data, list):
                 return data
             return []
-    except:
+    except Exception as e:
+        print("ERROR loading stories.json:", e)
         return []
 
 def save_stories(data):
-    with open(STORIES_FILE, "w", encoding="utf8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    try:
+        with open(STORIES_FILE, "w", encoding="utf8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print("ERROR saving stories.json:", e)
 
 # ----------------------------
-# Util request
+# Safe request
 # ----------------------------
 
 def safe_get(url):
@@ -47,13 +51,15 @@ def safe_get(url):
             r = requests.get(url, headers=HEADERS, timeout=12)
             if r.status_code == 200:
                 return r
+            print("WARNING: status code", r.status_code, "for", url)
             time.sleep(2)
-        except:
+        except Exception as e:
+            print("WARNING: request error:", e)
             time.sleep(2)
     return None
 
 # ----------------------------
-# Scrape chapter
+# Scrape chapter images
 # ----------------------------
 
 def scrape_chapter(url):
@@ -62,7 +68,8 @@ def scrape_chapter(url):
         return []
     soup = BeautifulSoup(r.text, "lxml")
     imgs = soup.select("div.page-chapter img")
-    return [img.get("src") for img in imgs if img.get("src")]
+    # lấy src hoặc data-src
+    return [img.get("src") or img.get("data-src") for img in imgs if img.get("src") or img.get("data-src")]
 
 # ----------------------------
 # Scrape story
@@ -73,21 +80,22 @@ def scrape_story(story_url):
 
     r = safe_get(full_url)
     if not r:
+        print("ERROR: cannot GET story page:", full_url)
         return None
 
     soup = BeautifulSoup(r.text, "lxml")
 
+    # Lấy title
     title_tag = soup.select_one("h1.title-detail")
     if not title_tag:
+        print("ERROR: cannot find title")
         return None
     title = title_tag.text.strip()
 
-    chapter_links = [
-        a.get("href") for a in soup.select("ul.list-chapter a")
-        if a.get("href")
-    ]
-
+    # Lấy chapter links
+    chapter_links = [a.get("href") for a in soup.select("div.list-chapter a") if a.get("href")]
     if not chapter_links:
+        print("ERROR: no chapters found for", title)
         return None
 
     chapter_links = chapter_links[::-1]  # old → new
@@ -97,13 +105,17 @@ def scrape_story(story_url):
         chapter_url = ch if ch.startswith("http") else "https://nettruyen0209.com" + ch
         images = scrape_chapter(chapter_url)
         if len(images) == 0:
+            print(f"WARNING: chapter {i+1} has no images, skip")
             continue
-
         chapters.append({
             "chapter": i + 1,
             "images": images
         })
         time.sleep(1)
+
+    if len(chapters) == 0:
+        print("ERROR: no chapters with images found for", title)
+        return None
 
     return title, chapters
 
@@ -154,7 +166,7 @@ def main():
             href = a.get("href")
             if href:
                 if not href.startswith("http"):
-                    href = "/manga" + href.split("/manga")[-1]
+                    href = "https://nettruyen0209.com" + href
                 story_links.append(href)
 
         for story_url in story_links:
