@@ -1,31 +1,36 @@
 name: NetTruyen Auto Scraper Bot
+
 on:
   schedule:
-    - cron: '*/30 * * * *'   # chạy mỗi 30 phút
+    - cron: '0 */2 * * *'   # chạy mỗi 2 tiếng
   workflow_dispatch:
 
 jobs:
   scrape-and-update:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-    - name: Install dependencies
-      run: pip install requests beautifulsoup4 lxml
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 lxml
 
-    - name: Run scraper
-      run: python scraper.py
+      - name: Run scraper
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+          MAX_LISTING_PAGES: 5
+          DELAY: 1.5
+        run: python scraper.py
 
-    - name: Commit & Push changes
-      run: |
-        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git config --global user.name "github-actions[bot]"
-        git add stories.json || echo "No stories.json to add"
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Bot update $(date +'%Y-%m-%d %H:%M')" && git push) || echo "No changes to commit"
+      - name: Commit & push updated stories.json (optional)
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git add stories.json || echo "No stories.json"
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Bot update $(date +'%Y-%m-%d %H:%M')" && git push) || echo "No changes to commit"
