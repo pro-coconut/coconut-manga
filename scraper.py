@@ -9,94 +9,134 @@ MAX_PAGES = int(os.getenv("MAX_PAGES", 20))
 STORIES_PER_RUN = 5
 START_PAGE = 3
 
-LIST_URL = "https://nettruyen0209.com/danh-sach-truyen/{page}/?sort=last_update&status=0"
+DOMAIN = "https://nettruyen0209.com"
+LIST_URL = DOMAIN + "/danh-sach-truyen/{page}/?sort=last_update&status=0"
 POSTED_FILE = "posted.json"
 
 
 # ==============================
-# Load & Save posted stories
+# Load/save
 # ==============================
 def load_posted():
     if not os.path.exists(POSTED_FILE):
         return []
-
     with open(POSTED_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
-def save_posted(data):
+def save_posted(lst):
     with open(POSTED_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+        json.dump(lst, f, indent=2, ensure_ascii=False)
 
 
 # ==============================
-# Lấy danh sách link truyện
+# Lấy danh sách truyện
 # ==============================
 def get_story_links():
     links = []
+
     print("=== 🔍 START SCANNING FOR STORIES ===")
 
     for page in range(START_PAGE, MAX_PAGES + 1):
         url = LIST_URL.format(page=page)
         print(f"📄 Checking page {page}: {url}")
 
-        html = requests.get(url).text
+        try:
+            html = requests.get(url, timeout=10).text
+        except:
+            print("❌ Failed to load page")
+            continue
+
         soup = BeautifulSoup(html, "lxml")
         items = soup.select("div.item figure a")
 
         if not items:
-            print(f"⚠ Page {page} returned 0 items. Possible end.")
+            print("⚠ No more items → stop scan")
             break
 
         for a in items:
             link = a.get("href")
-            if link and link not in links:
-                links.append(link)
+            if link.startswith("/"):
+                link = DOMAIN + link
+            links.append(link)
 
         print(f"➕ Added {len(items)} links from page {page}")
-        time.sleep(0.8)
+        time.sleep(0.5)
 
     print(f"🎉 TOTAL LINKS: {len(links)}")
     return links
 
 
 # ==============================
-# Lấy thông tin truyện + chapter
+# Scrap chapter images
 # ==============================
-def scrape_story(url):
-    print(f"\n=== 📘 SCRAPING STORY ===")
-    print(url)
+def scrape_chapter_images(url):
+    if url.startswith("/"):
+        url = DOMAIN + url
 
-    html = requests.get(url).text
+    try:
+        html = requests.get(url, timeout=10).text
+    except:
+        print("❌ Error loading chapter:", url)
+        return []
+
     soup = BeautifulSoup(html, "lxml")
 
-    # TITLE
-    title_node = soup.select_one(".title-detail")
-    title = title_node.text.strip() if title_node else "No Title"
+    imgs = []
+    for img in soup.select(".page-chapter img"):
+        src = img.get("data-src") or img.get("src")
+        if src:
+            if src.startswith("//"):
+                src = "https:" + src
+            imgs.append(src)
 
-    # COVER
+    return imgs
+
+
+# ==============================
+# Scrap full story
+# ==============================
+def scrape_story(url):
+    print("\n=== 📘 SCRAPING STORY ===")
+    print(url)
+
+    try:
+        html = requests.get(url, timeout=10).text
+    except:
+        print("❌ Cannot load story URL")
+        return None
+
+    soup = BeautifulSoup(html, "lxml")
+
+    title = soup.select_one(".title-detail")
+    title = title.text.strip() if title else "No Title"
+
     cover_node = soup.select_one(".detail-info img")
     cover = cover_node.get("src") if cover_node else ""
 
-    # DESCRIPTION
-    des = soup.select_one(".detail-content p")
-    description = des.text.strip() if des else ""
+    des_node = soup.select_one(".detail-content p")
+    description = des_node.text.strip() if des_node else ""
 
-    # CHAPTER LIST
     chapters = []
-    chapter_nodes = soup.select(".list-chapter li a")
+    ch_nodes = soup.select(".list-chapter li a")
 
-    for c in chapter_nodes:
+    for c in ch_nodes:
         ch_name = c.text.strip()
         ch_url = c.get("href")
 
-        # Lấy ảnh trong chapter
+        if not ch_url:
+            continue
+        if ch_url.startswith("/"):
+            ch_url = DOMAIN + ch_url
+
+        chapter_imgs = scrape_chapter_images(ch_url)
+
         chapters.append({
             "chapter": ch_name,
-            "images": scrape_chapter_images(ch_url)
+            "images": chapter_imgs
         })
 
-        time.sleep(0.5)
+        time.sleep(0.3)
 
     return {
         "name": title,
@@ -107,35 +147,19 @@ def scrape_story(url):
 
 
 # ==============================
-# Lấy ảnh trong 1 chapter
-# ==============================
-def scrape_chapter_images(url):
-    html = requests.get(url).text
-    soup = BeautifulSoup(html, "lxml")
-
-    imgs = []
-    for img in soup.select(".page-chapter img"):
-        link = img.get("data-src") or img.get("src")
-        if link:
-            imgs.append(link)
-
-    return imgs
-
-
-# ==============================
-# Upload lên API
+# Upload API
 # ==============================
 def upload_story(data):
     if not API_BASE:
-        print("❌ API_BASE_URL is empty!")
+        print("❌ API_BASE_URL missing!")
         return False
 
     try:
         res = requests.post(f"{API_BASE}/api/stories/create", json=data)
-        print(f"📤 API Response: {res.status_code} - {res.text}")
-        return True
+        print(f"📤 API Response: {res.status_code} {res.text}")
+        return res.status_code == 200
     except Exception as e:
-        print(f"❌ Upload error: {e}")
+        print("❌ API upload error:", e)
         return False
 
 
@@ -146,7 +170,6 @@ def main():
     posted = load_posted()
     all_links = get_story_links()
 
-    # Lọc ra các truyện chưa đăng
     new_links = [l for l in all_links if l not in posted]
 
     if not new_links:
@@ -156,25 +179,25 @@ def main():
     print(f"\n📌 Stories remaining: {len(new_links)}")
     print(f"🚀 Will upload next {STORIES_PER_RUN} stories")
 
-    upload_count = 0
+    uploaded = 0
 
     for url in new_links:
-        if upload_count >= STORIES_PER_RUN:
+        if uploaded >= STORIES_PER_RUN:
             break
 
         data = scrape_story(url)
+        if not data:
+            continue
 
         if upload_story(data):
             posted.append(url)
-            upload_count += 1
-            print(f"✅ Uploaded {upload_count}/{STORIES_PER_RUN}")
-        else:
-            print("❌ Skipped due to error")
+            uploaded += 1
+            save_posted(posted)
+            print(f"✅ Uploaded {uploaded}/{STORIES_PER_RUN}")
 
-        save_posted(posted)
         time.sleep(1)
 
-    print("\n🎯 DONE for this run.")
+    print("\n🎯 DONE.")
 
 
 if __name__ == "__main__":
