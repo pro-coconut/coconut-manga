@@ -1,84 +1,72 @@
-const fs = require("fs-extra");
-const path = require("path");
-const axios = require("axios");
-const { Manga } = require("manga-lib");
-const { execSync } = require("child_process");
+const { Mangas, Sources } = require("manga-lib");
+const fs = require("fs");
 
-// ==== CẤU HÌNH ====
-const START_PAGE = 4;
-const END_PAGE = 14;
+// Chọn nguồn truyện
+const source = Sources.NetTruyen;
 
-const LOCAL_DIR = process.cwd();
-const STORIES_FILE = path.join(LOCAL_DIR, "stories.json");
-const BRANCH = "main";
-const REPO_URL = `https://${process.env.GITHUB_TOKEN}@github.com/${process.env.REPO_NAME}.git`;
+// Danh sách truyện cần lấy (slug trên NetTruyen)
+const storySlugs = [
+  "gap-manh-thi-manh-ta-tu-vi-vo-thuong-han",
+  "tien-hoa-vo-han-bat-dau-tu-con-so-khong"
+];
 
-// ==== HÀM LẤY DANH SÁCH TRUYỆN ====
-async function fetchStoryList(page) {
-  const url = `https://nettruyen0209.com/danh-sach-truyen/${page}/?sort=last_update&status=0`;
-  const res = await axios.get(url);
-  const html = res.data;
-  const manga = new Manga(html);
-  return manga.list.map((m) => m.link);
-}
+const STORIES_FILE = "stories.json";
 
-// ==== HÀM LẤY THÔNG TIN TRUYỆN ====
-async function fetchStoryData(storyUrl) {
-  const manga = new Manga(storyUrl);
-  await manga.load();
-  return {
-    id: manga.slug,
-    title: manga.title,
-    author: manga.author || "Không rõ",
-    description: manga.description || "",
-    thumbnail: manga.cover,
-    chapters: manga.chapters.map((c) => ({
-      name: c.title,
-      images: c.images
-    }))
-  };
-}
-
-// ==== HÀM LƯU JSON ====
-async function saveStories(data) {
-  await fs.writeJson(STORIES_FILE, data, { spaces: 2 });
-  console.log(`Saved ${data.length} stories to ${STORIES_FILE}`);
-}
-
-// ==== HÀM PUSH GITHUB ====
-function pushToGitHub() {
+// ==== Load stories.json cũ ====
+let existingStories = [];
+if (fs.existsSync(STORIES_FILE)) {
   try {
-    execSync(`git config user.name "github-actions"`);
-    execSync(`git config user.email "actions@github.com"`);
-    execSync(`git add .`);
-    execSync(`git commit -m "Update stories.json" || echo "No changes"`);
-    execSync(`git push ${REPO_URL} ${BRANCH}:${BRANCH}`);
-    console.log("Pushed to GitHub successfully!");
-  } catch (err) {
-    console.error("Git push failed:", err.message);
+    existingStories = JSON.parse(fs.readFileSync(STORIES_FILE, "utf-8"));
+  } catch (e) {
+    console.log("Không thể đọc stories.json cũ:", e.message);
   }
 }
 
-// ==== CHẠY SCRAPER ====
-(async () => {
-  const allStories = [];
-  for (let page = START_PAGE; page <= END_PAGE; page++) {
-    console.log(`Fetching list page: ${page}`);
+// Helper để tìm truyện theo slug
+function findStory(slug) {
+  return existingStories.find(s => s.id === slug);
+}
+
+// ==== Main scraper ====
+async function main() {
+  for (let slug of storySlugs) {
     try {
-      const links = await fetchStoryList(page);
-      for (const link of links) {
-        console.log(`Scraping ${link}`);
-        try {
-          const data = await fetchStoryData(link);
-          allStories.push(data);
-        } catch (e) {
-          console.warn(`[WARN] Failed ${link}: ${e.message}`);
+      const manga = await Mangas.fetch({ source, slug });
+      let story = findStory(slug);
+
+      // Nếu truyện chưa có, tạo mới
+      if (!story) {
+        story = {
+          id: slug,
+          title: manga.title,
+          author: manga.author || "Không rõ",
+          description: manga.description || "",
+          thumbnail: manga.thumbnail || "",
+          chapters: []
+        };
+        existingStories.push(story);
+      }
+
+      // Lấy danh sách chapter mới
+      const existingChapterNames = story.chapters.map(c => c.name);
+      for (let chapter of manga.chapters) {
+        if (!existingChapterNames.includes(chapter.title)) {
+          story.chapters.push({
+            name: chapter.title,
+            images: chapter.pages
+          });
+          console.log(`Added new chapter: ${slug} - ${chapter.title}`);
         }
       }
+
     } catch (e) {
-      console.warn(`[WARN] Page ${page} failed: ${e.message}`);
+      console.log(`Lỗi lấy truyện ${slug}:`, e.message);
     }
   }
-  await saveStories(allStories);
-  pushToGitHub();
-})();
+
+  // Lưu lại stories.json
+  fs.writeFileSync(STORIES_FILE, JSON.stringify(existingStories, null, 2), "utf-8");
+  console.log("Updated stories.json thành công!");
+}
+
+main();
