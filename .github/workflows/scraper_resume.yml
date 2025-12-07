@@ -1,31 +1,28 @@
-name: Scraper Bot
+name: Scraper Push
 
 on:
   schedule:
-    # Chạy mỗi 30 phút
-    - cron: "*/30 * * * *"
+    # Chạy định kỳ 30 phút
+    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 jobs:
-  scraper:
+  scrape-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout repo
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # Cài Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
 
-      # Cài dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 lxml GitPython
 
-      # Chạy scraper
       - name: Run scraper
-        run: python scraper_resume_push.py
+        run: python scraper_push_github.py
