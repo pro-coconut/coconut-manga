@@ -2,169 +2,118 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title id="comic-title">Đang tải...</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="icon" href="data:,">
 <style>
   body {
     margin: 0;
-    background: #111;
+    padding: 0;
+    background: #000;
     color: #fff;
     font-family: Arial, sans-serif;
+    overflow-x: hidden;
   }
-  #pages { max-width: 900px; margin: 0 auto; padding: 10px; }
-  .chapter-title {
-    margin: 25px 0 10px;
-    font-size: 1.6em;
-    color: #e74c3c;
-    border-bottom: 2px solid #e74c3c;
-    padding-bottom: 5px;
+  .chapter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
   }
   .chapter img {
     width: 100%;
+    max-width: 100%;
     display: block;
     margin: 0;
-    padding: 0;
-    border: none;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
-  }
-  .chapter img.visible {
-    opacity: 1;
-    transform: translateY(0);
   }
   .controls {
     position: fixed;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0,0,0,0.8);
+    background: rgba(0,0,0,0.7);
     color: white;
-    padding: 8px 20px;
+    padding: 10px 20px;
     border-radius: 30px;
-    z-index: 1000;
-    font-size: 16px;
+    z-index: 100;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 15px;
+    font-size: 14px;
   }
   .controls button {
     background: #e74c3c;
     color: #fff;
     border: none;
-    padding: 5px 12px;
-    border-radius: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
     cursor: pointer;
     font-weight: bold;
-    transition: 0.3s;
-  }
-  .controls button:hover { background: #c0392b; }
-  @media(max-width:768px){
-    #pages{padding:5px;}
-    .chapter-title{font-size:1.3em;}
-    .controls{font-size:14px;padding:6px 15px;gap:8px;}
   }
 </style>
 </head>
 <body>
-<div id="pages"></div>
+
+<div id="pages" class="chapter"></div>
+
 <div class="controls">
-  <button onclick="history.back()">← Back</button>
+  <button onclick="history.back()">← Quay lại</button>
   <span id="page-info">0 / 0</span>
 </div>
 
 <script>
 const urlParams = new URLSearchParams(window.location.search);
 const storyId = urlParams.get('id');
-let stories = [], currentChap = 0, currentImage = 0, loadingNext = false;
-
 if (!storyId) {
-  document.body.innerHTML = "<h1 style='text-align:center;margin-top:50px'>Không tìm thấy truyện!</h1>";
+  document.body.innerHTML = "<h1 style='text-align:center;margin-top:50px;color:#fff'>Không tìm thấy truyện!</h1>";
 }
 
-const pageInfo = document.getElementById('page-info');
-const container = document.getElementById('pages');
+fetch('stories.json')
+  .then(r => r.json())
+  .then(data => {
+    const story = data.find(s => s.id === storyId);
+    if (!story) throw new Error("Truyện không tồn tại");
 
-fetch('stories.json?t=' + Date.now())
-.then(r=>r.json())
-.then(data=>{
-  stories = data;
-  const story = stories.find(s=>s.id===storyId);
-  if(!story) throw new Error("Truyện không tồn tại");
+    document.getElementById('comic-title').textContent = story.title;
 
-  document.title = story.title + " - Coconut Manga";
-  document.getElementById('comic-title').textContent = story.title;
+    const container = document.getElementById('pages');
 
-  // Load saved position nếu có
-  const saved = localStorage.getItem(`${storyId}_lastPos`);
-  if(saved){
-    const [chapIdx,imgIdx] = saved.split('|').map(Number);
-    currentChap = chapIdx || 0;
-    currentImage = imgIdx || 0;
-  }
+    story.chapters.forEach((chap, idx) => {
+      const chapDiv = document.createElement('div');
+      chapDiv.className = 'chapter';
+      chapDiv.id = 'chap' + idx;
+      chapDiv.innerHTML = `<h2 style="color:#e74c3c;text-align:center;margin:10px 0">${chap.name}</h2>`;
 
-  loadChapter(currentChap, currentImage);
+      chap.images.forEach(src => {
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = "page";
+        img.loading = "lazy";
+        chapDiv.appendChild(img);
+      });
 
-  // Theo dõi scroll để hiện số trang, fade-in, load chapter tiếp
-  window.addEventListener('scroll', () => {
-    const imgs = container.querySelectorAll('img');
-    let cur = 0;
-    imgs.forEach((img,i) => {
-      const rect = img.getBoundingClientRect();
-      if(rect.top < window.innerHeight*0.8){
-        img.classList.add('visible');
-      }
-      if(rect.top < window.innerHeight/2) cur = i + 1;
+      container.appendChild(chapDiv);
     });
-    currentImage = cur-1;
-    pageInfo.textContent = `${cur} / ${imgs.length}`;
-    localStorage.setItem(`${storyId}_lastPos`, currentChap+'|'+currentImage);
 
-    // Load chapter tiếp nếu gần cuối
-    if(!loadingNext && currentChap < story.chapters.length-1){
-      const lastImg = imgs[imgs.length-1];
-      if(lastImg.getBoundingClientRect().bottom < window.innerHeight*2){
-        loadingNext = true;
-        loadChapter(currentChap+1);
-        loadingNext = false;
-      }
-    }
-  });
-})
-.catch(err=>{
-  document.body.innerHTML = `<h1 style='text-align:center;margin-top:50px'>Lỗi: ${err.message}</h1>`;
-});
-
-// Load chapter
-function loadChapter(idx, scrollToImg=0){
-  const story = stories.find(s=>s.id===storyId);
-  if(!story) return;
-  if(idx<0) idx=0;
-  if(idx>=story.chapters.length) idx=story.chapters.length-1;
-  currentChap = idx;
-  const chap = story.chapters[idx];
-
-  const chapTitle = document.createElement('h2');
-  chapTitle.className = 'chapter-title';
-  chapTitle.textContent = chap.name;
-  container.appendChild(chapTitle);
-
-  chap.images.forEach(src=>{
-    const img = document.createElement('img');
-    img.src = src;
-    img.loading = 'lazy';
-    img.alt = 'page';
-    container.appendChild(img);
-  });
-
-  // Scroll đến trang đã đọc trước
-  if(scrollToImg>0){
     const imgs = container.querySelectorAll('img');
-    if(imgs[scrollToImg]) imgs[scrollToImg].scrollIntoView({behavior:'auto'});
-  }
-}
+    const total = imgs.length;
+    const pageInfo = document.getElementById('page-info');
+    pageInfo.textContent = `0 / ${total}`;
+
+    window.addEventListener('scroll', () => {
+      let current = 0;
+      imgs.forEach((img, i) => {
+        if (img.getBoundingClientRect().top < window.innerHeight / 2) current = i + 1;
+      });
+      pageInfo.textContent = `${current} / ${total}`;
+    });
+  })
+  .catch(err => {
+    document.body.innerHTML = `<h1 style='text-align:center;margin-top:50px;color:#e74c3c'>Lỗi: ${err.message}</h1>`;
+  });
 </script>
+
 </body>
 </html>
