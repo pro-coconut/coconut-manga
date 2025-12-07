@@ -1,15 +1,17 @@
 {
   "name": "manga-scraper",
   "version": "1.0.0",
-  "description": "Scraper truyện tranh tự động đăng lên GitHub Pages",
+  "description": "Scraper manga tự động cập nhật stories.json",
   "main": "scraper.js",
+  "type": "module",
   "scripts": {
     "start": "node scraper.js"
   },
   "dependencies": {
-    "manga-lib": "^1.1.1",
-    "axios": "^1.7.0",
-    "fs-extra": "^11.1.1",
-    "simple-git": "^3.19.1"
+    "manga-lib": "^3.0.0",
+    "fs-extra": "^11.1.1"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
