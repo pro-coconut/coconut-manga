@@ -1,15 +1,27 @@
+// scraper.js
 import axios from "axios";
-import cheerio from "cheerio";
+import * as cheerio from "cheerio";
 import fs from "fs";
+import { execSync } from "child_process";
+import path from "path";
+
+// ==== CẤU HÌNH ====
+const TOKEN = process.env.GITHUB_TOKEN; // Lấy token từ GitHub Actions Secret
+const USERNAME = "pro-coconut";
+const REPO_NAME = "pro-coconut.github.io";
+const BRANCH = "main";
 
 const START_PAGE = 4;
 const END_PAGE = 14;
-const STORIES_FILE = "./stories.json";
 
-// Lấy danh sách truyện từ 1 page
+const REPO_URL = `https://${TOKEN}@github.com/${USERNAME}/${REPO_NAME}.git`;
+const LOCAL_DIR = process.cwd();
+const STORIES_FILE = path.join(LOCAL_DIR, "stories.json");
+
+// ==== HÀM LẤY DANH SÁCH TRUYỆN ====
 async function fetchStoryList(page) {
-  const url = `https://nettruyen0209.com/danh-sach-truyen/${page}/?sort=last_update&status=0`;
   try {
+    const url = `https://nettruyen0209.com/danh-sach-truyen/${page}/?sort=last_update&status=0`;
     const res = await axios.get(url);
     const $ = cheerio.load(res.data);
     const links = [];
@@ -18,13 +30,13 @@ async function fetchStoryList(page) {
       if (href) links.push(href);
     });
     return links;
-  } catch (e) {
-    console.warn(`[WARN] Failed page ${page}: ${e.message}`);
+  } catch (err) {
+    console.warn(`[WARN] Failed page ${page}: ${err.message}`);
     return [];
   }
 }
 
-// Lấy thông tin chi tiết 1 truyện
+// ==== HÀM LẤY THÔNG TIN TRUYỆN ====
 async function fetchStoryData(storyUrl) {
   try {
     const res = await axios.get(storyUrl);
@@ -36,50 +48,88 @@ async function fetchStoryData(storyUrl) {
     const slug = storyUrl.split("/").filter(Boolean).pop();
     const thumbnail = $(".info-image img").attr("src") || "";
 
-    // Lấy chapters (giả lập từ chapter 1 → 100)
-    const chapters = [];
-    for (let i = 1; i <= 100; i++) {
-      const chapUrl = `${storyUrl}/chapter-${i}`;
-      try {
-        const chapRes = await axios.get(chapUrl);
-        const $$ = cheerio.load(chapRes.data);
-        const imgs = [];
-        $$(".reading-detail img").each((j, img) => {
-          const src = $$(img).attr("data-src") || $$(img).attr("src");
-          if (src) imgs.push(src);
-        });
-        if (imgs.length > 0) {
-          chapters.push({ name: `Chapter ${i}`, images: imgs });
-        } else {
-          break;
-        }
-      } catch {
-        break;
-      }
-    }
+    const chapters = await fetchChapters(storyUrl, slug);
 
-    return { id: slug, title, author, description, thumbnail, chapters };
-  } catch (e) {
-    console.warn(`[WARN] Failed ${storyUrl}: ${e.message}`);
+    return {
+      id: slug,
+      title,
+      author,
+      description,
+      thumbnail,
+      chapters,
+    };
+  } catch (err) {
+    console.warn(`[WARN] Failed story ${storyUrl}: ${err.message}`);
     return null;
   }
 }
 
+// ==== HÀM LẤY CHAPTER VÀ URL ẢNH ====
+async function fetchChapters(storyUrl, slug) {
+  const chapters = [];
+  for (let i = 1; i <= 100; i++) {
+    const chapUrl = `${storyUrl}/chapter-${i}`;
+    try {
+      const res = await axios.get(chapUrl);
+      if (res.status !== 200) break;
+
+      const $ = cheerio.load(res.data);
+      const imgs = $(".reading-detail img");
+      if (!imgs.length) continue;
+
+      const imgUrls = [];
+      imgs.each((i, el) => {
+        const src = $(el).attr("data-src") || $(el).attr("src");
+        if (src) imgUrls.push(src);
+      });
+
+      if (imgUrls.length > 0) {
+        chapters.push({ name: `Chapter ${i}`, images: imgUrls });
+      }
+    } catch {
+      break; // Nếu không có trang chapter nữa thì dừng
+    }
+  }
+  return chapters;
+}
+
+// ==== HÀM LƯU JSON ====
+function saveStories(data) {
+  fs.writeFileSync(STORIES_FILE, JSON.stringify(data, null, 2), "utf-8");
+  console.log(`Saved ${data.length} stories to ${STORIES_FILE}`);
+}
+
+// ==== HÀM PUSH GITHUB ====
+function pushToGitHub() {
+  try {
+    execSync("git config --global user.email 'github-actions[bot]@users.noreply.github.com'");
+    execSync("git config --global user.name 'github-actions[bot]'");
+    execSync("git add .");
+    execSync(`git commit -m "Update stories.json" || echo "No changes to commit"`);
+    execSync(`git push ${REPO_URL} ${BRANCH}`);
+    console.log("Pushed to GitHub successfully!");
+  } catch (err) {
+    console.error("Failed to push to GitHub:", err.message);
+  }
+}
+
+// ==== CHẠY SCRAPER ====
 async function runScraper() {
   const allStories = [];
 
   for (let page = START_PAGE; page <= END_PAGE; page++) {
     console.log(`Fetching list page: ${page}`);
     const storyLinks = await fetchStoryList(page);
+
     for (const link of storyLinks) {
       console.log(`Scraping ${link}`);
-      const story = await fetchStoryData(link);
-      if (story) allStories.push(story);
+      const storyData = await fetchStoryData(link);
+      if (storyData) allStories.push(storyData);
     }
   }
 
-  fs.writeFileSync(STORIES_FILE, JSON.stringify(allStories, null, 2), "utf-8");
-  console.log(`Saved ${allStories.length} stories to ${STORIES_FILE}`);
+  saveStories(allStories);
+  pushToGitHub();
 }
 
 runScraper();
