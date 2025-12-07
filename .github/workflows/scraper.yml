@@ -2,7 +2,7 @@ name: Manga Scraper
 
 on:
   schedule:
-    - cron: "*/30 * * * *" # chạy mỗi 30 phút
+    - cron: '*/30 * * * *'  # chạy mỗi 30 phút
   workflow_dispatch:
 
 jobs:
@@ -10,18 +10,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '20'
+
+      - name: Clean npm cache
+        run: npm cache clean --force
 
       - name: Install dependencies
         run: npm install
 
       - name: Run scraper
-        run: npm start
+        run: node scraper.js
         env:
-          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
