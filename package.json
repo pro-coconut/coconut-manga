@@ -1,17 +1,10 @@
 {
-  "name": "manga-scraper",
+  "name": "pro-coconut",
   "version": "1.0.0",
-  "description": "Scraper truyện tự động lên GitHub Pages",
-  "main": "scraper.js",
-  "scripts": {
-    "start": "node scraper.js"
-  },
-  "engines": {
-    "node": ">=20"
-  },
   "dependencies": {
-    "manga-lib": "^2.2.0",
-    "fs-extra": "^11.1.1",
-    "simple-git": "^3.19.0"
+    "axios": "^1.7.0",
+    "cheerio": "^1.0.0-rc.12",
+    "manga-lib": "1.1.2",
+    "puppeteer": "^24.1.1"
   }
 }
