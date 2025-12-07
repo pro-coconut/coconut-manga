@@ -1,154 +1,267 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Đăng Truyện - Coconut Manga</title>
-  <style>
-    body{font-family:Arial,sans-serif;background:#f4f4f9;margin:0;padding:15px}
-    .box{max-width:560px;margin:0 auto;background:#fff;border-radius:15px;box-shadow:0 5px 25px rgba(0,0,0,0.15);overflow:hidden}
-    h1{background:#e74c3c;color:#fff;text-align:center;padding:20px;margin:0;font-size:24px}
-    .form{padding:20px}
-    input[type=text],input[type=file],textarea{width:100%;padding:12px;margin:10px 0;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:16px}
-    textarea{height:100px;resize:vertical}
-    .drop{border:3px dashed #e74c3c;background:#fff8f8;padding:40px;text-align:center;border-radius:12px;margin:15px 0;cursor:pointer;font-size:16px}
-    .drop:hover{background:#ffe5e5}
-    button{width:100%;padding:15px;background:#e74c3c;color:#fff;border:none;border-radius:10px;font-size:18px;margin-top:10px;cursor:pointer;font-weight:bold}
-    .progress{height:12px;background:#eee;border-radius:6px;overflow:hidden;margin:15px 0}
-    .bar{height:100%;width:0;background:#e74c3c;transition:width .4s}
-    #status{text-align:center;padding:10px;font-weight:bold;font-size:16px}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đăng Truyện - Coconut Manga</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f4f9;
+  margin: 0;
+  padding: 15px;
+  color: #333;
+}
+
+.box {
+  max-width: 650px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+
+h1 {
+  background: #e74c3c;
+  color: #fff;
+  text-align: center;
+  padding: 20px;
+  margin: 0;
+  font-size: 24px;
+}
+
+.form { padding: 20px; }
+
+.label-section {
+  font-weight: bold;
+  margin-top: 15px;
+  color: #e74c3c;
+  font-size: 16px;
+}
+
+input[type=text], textarea, input[type=file] {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
+textarea { height: 100px; resize: vertical; }
+
+.drop {
+  border: 3px dashed #e74c3c;
+  background: #fff8f8;
+  padding: 40px;
+  text-align: center;
+  border-radius: 12px;
+  margin: 15px 0;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.3s, transform 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.drop:hover { background: #ffe5e5; transform: scale(1.02); }
+
+.preview {
+  margin: 10px 0;
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 10px;
+  padding-bottom: 5px;
+}
+
+.preview img {
+  max-width: 120px;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #e74c3c;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+button {
+  width: 100%;
+  padding: 15px;
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 18px;
+  margin-top: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+button:hover { background: #c0392b; }
+
+.progress { height: 12px; background: #eee; border-radius: 6px; overflow: hidden; margin: 15px 0; }
+.bar { height: 100%; width: 0; background: #e74c3c; transition: width 0.4s; }
+#status { text-align: center; padding: 10px; font-weight: bold; font-size: 16px; }
+</style>
 </head>
 <body>
-  <div class="box">
-    <h1>ĐĂNG TRUYỆN MỚI</h1>
-    <div class="form">
-      <input type="text" id="title" placeholder="Tên truyện (bắt buộc)" required>
-      <input type="text" id="id" placeholder="ID (không dấu, vd: tavodich)" required>
-      <input type="text" id="author" placeholder="Tác giả (không bắt buộc)">
-      <textarea id="description" placeholder="Tóm tắt truyện (hiện ở trang chi tiết)"></textarea>
-      <input type="file" id="cover" accept="image/*" required>
-      <input type="text" id="chap" placeholder="Tên chapter" value="Chapter 1">
-      <div class="drop" id="dropZone">Kéo thả ảnh chapter vào đây<br>hoặc nhấn để chọn nhiều ảnh</div>
-      <input type="file" id="chapterImages" multiple accept="image/*" style="display:none">
-      <button onclick="uploadAll()">GỬI TRUYỆN NGAY</button>
-      <div class="progress"><div class="bar" id="progressBar"></div></div>
-      <div id="status">Sẵn sàng đăng truyện</div>
-    </div>
-  </div>
+<div class="box">
+<h1>ĐĂNG TRUYỆN MỚI</h1>
+<div class="form">
+  <div class="label-section">Thông tin cơ bản</div>
+  <input type="text" id="title" placeholder="Tên truyện (bắt buộc)" required>
+  <input type="text" id="id" placeholder="ID (không dấu, vd: tavodich)" required>
+  <input type="text" id="author" placeholder="Tác giả (không bắt buộc)">
+  <textarea id="description" placeholder="Tóm tắt truyện (hiện ở trang chi tiết)"></textarea>
 
-  <script>
-    // Token
-    let token = localStorage.getItem("gh_token");
-    if (!token || !token.startsWith("ghp_")) {
-      token = prompt("Nhập GitHub Token (ghp_...) – chỉ hiện 1 lần:");
-      if (token && token.startsWith("ghp_")) localStorage.setItem("gh_token", token);
-      else { alert("Token sai!"); throw new Error("No token"); }
+  <div class="label-section">Chọn ảnh bìa truyện</div>
+  <input type="file" id="cover" accept="image/*" required>
+  <p style="font-size:14px;color:#555;">Chọn 1 ảnh duy nhất làm bìa truyện, sẽ hiển thị trên trang chủ và chi tiết truyện.</p>
+  <div class="preview" id="coverPreview"></div>
+
+  <div class="label-section">Tạo chapter mới</div>
+  <input type="text" id="chap" placeholder="Tên chapter" value="Chapter 1">
+  <div class="drop" id="dropZone">
+    <span style="font-size:16px;font-weight:bold;">Kéo thả ảnh chapter vào đây hoặc nhấn để chọn nhiều ảnh</span>
+    <small style="color:#555;margin-top:5px;">Mỗi ảnh sẽ là 1 trang, thứ tự hiển thị theo thứ tự bạn chọn</small>
+  </div>
+  <input type="file" id="chapterImages" multiple accept="image/*" style="display:none">
+  <div class="preview" id="chapterPreview"></div>
+
+  <button onclick="uploadAll()">GỬI TRUYỆN NGAY</button>
+  <div class="progress"><div class="bar" id="progressBar"></div></div>
+  <div id="status">Sẵn sàng đăng truyện</div>
+</div>
+</div>
+
+<script>
+let token = localStorage.getItem("gh_token");
+if (!token || !token.startsWith("ghp_")) {
+  token = prompt("Nhập GitHub Token (ghp_...) – chỉ hiện 1 lần:");
+  if (token && token.startsWith("ghp_")) localStorage.setItem("gh_token", token);
+  else { alert("Token sai!"); throw new Error("No token"); }
+}
+
+const API = "https://api.github.com/repos/pro-coconut/pro-coconut.github.io/contents";
+const RAW = "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main";
+
+async function uploadFile(path, file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result.split(',')[1];
+      const payload = { message: "upload truyện", content: base64, branch: "main" };
+      try { const res = await fetch(API + "/" + path, { headers:{Authorization:"token "+token} });
+        if(res.ok) payload.sha=(await res.json()).sha;
+      } catch(e){}
+      const putRes = await fetch(API+"/"+path,{
+        method:"PUT",
+        headers:{Authorization:"token "+token,"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+      });
+      if(putRes.ok) resolve(RAW+"/"+path);
+      else reject("Upload thất bại");
+    };
+    reader.onerror = ()=>reject("Lỗi đọc file");
+    reader.readAsDataURL(file);
+  });
+}
+
+// Preview ảnh bìa
+const coverInput=document.getElementById("cover");
+const coverPreview=document.getElementById("coverPreview");
+coverInput.addEventListener("change",()=>{
+  coverPreview.innerHTML="";
+  const file=coverInput.files[0];
+  if(file){
+    const img=document.createElement("img");
+    img.src=URL.createObjectURL(file);
+    coverPreview.appendChild(img);
+  }
+});
+
+// Drag & Drop chapter
+const dropZone=document.getElementById("dropZone");
+const chapterInput=document.getElementById("chapterImages");
+const chapterPreview=document.getElementById("chapterPreview");
+
+dropZone.addEventListener("click",()=>chapterInput.click());
+dropZone.addEventListener("dragover",e=>e.preventDefault());
+dropZone.addEventListener("drop",e=>{
+  e.preventDefault();
+  chapterInput.files=e.dataTransfer.files;
+  showChapterPreview();
+});
+
+chapterInput.addEventListener("change",showChapterPreview);
+
+function showChapterPreview(){
+  chapterPreview.innerHTML="";
+  const files=chapterInput.files;
+  for(let i=0;i<files.length;i++){
+    const img=document.createElement("img");
+    img.src=URL.createObjectURL(files[i]);
+    chapterPreview.appendChild(img);
+  }
+  dropZone.innerHTML=`<span style="font-weight:bold;">Đã chọn ${files.length} ảnh chapter</span><br><small style="color:#555;">Sẵn sàng đăng!</small>`;
+}
+
+async function uploadAll(){
+  const status=document.getElementById("status");
+  const bar=document.getElementById("progressBar");
+  try{
+    status.textContent="Đang chuẩn bị...";
+    bar.style.width="5%";
+
+    const id=document.getElementById("id").value.trim().toLowerCase().replace(/[^a-z0-9]/g,"");
+    const title=document.getElementById("title").value.trim();
+    if(!title||!id) throw "Vui lòng nhập tên truyện và ID";
+
+    status.textContent="Upload ảnh bìa...";
+    bar.style.width="20%";
+    const coverUrl=await uploadFile(`images/${id}_cover.jpg`, coverInput.files[0]);
+
+    const files=chapterInput.files;
+    const imageUrls=[];
+    for(let i=0;i<files.length;i++){
+      status.textContent=`Upload trang ${i+1}/${files.length}...`;
+      const url=await uploadFile(`images/${id}_p${i+1}.jpg`, files[i]);
+      imageUrls.push(url);
+      bar.style.width=`${20+(i+1)/files.length*70}%`;
     }
 
-    const API = "https://api.github.com/repos/pro-coconut/pro-coconut.github.io/contents";
-    const RAW = "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main";
+    status.textContent="Cập nhật danh sách...";
+    bar.style.width="95%";
+    const stories=await fetch(RAW+"/stories.json?t="+Date.now()).then(r=>r.ok?r.json():[]);
+    const exist=stories.find(s=>s.id===id);
+    const newChap={name:document.getElementById("chap").value||"Chapter mới", images:imageUrls};
 
-    // Hàm upload 1 file (dùng base64 nhưng xử lý từng file riêng – an toàn tuyệt đối)
-    async function uploadFile(path, file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = async () => {
-          const base64 = reader.result.split(',')[1];
-          const payload = { message: "upload truyện", content: base64, branch: "main" };
-
-          // Lấy SHA nếu file đã tồn tại
-          try {
-            const res = await fetch(API + "/" + path, { headers: { Authorization: "token " + token } });
-            if (res.ok) payload.sha = (await res.json()).sha;
-          } catch(e) {}
-
-          const putRes = await fetch(API + "/" + path, {
-            method: "PUT",
-            headers: { Authorization: "token " + token, "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-
-          if (putRes.ok) resolve(RAW + "/" + path);
-          else reject("Upload thất bại");
-        };
-        reader.onerror = () => reject("Lỗi đọc file");
-        reader.readAsDataURL(file);
+    if(exist){
+      exist.chapters.push(newChap);
+      if(document.getElementById("description").value) exist.description=document.getElementById("description").value;
+    }else{
+      stories.push({
+        id, title,
+        author:document.getElementById("author").value||"Không rõ",
+        description:document.getElementById("description").value||"Chưa có tóm tắt",
+        thumbnail:coverUrl,
+        chapters:[newChap]
       });
     }
 
-    // Drag & drop + chọn file – ĐÃ SỬA HOÀN TOÀN CHẠY NGON!
-    const dropZone = document.getElementById("dropZone");
-    dropZone.addEventListener("click", () => document.getElementById("chapterImages").click());
-    dropZone.addEventListener("dragover", e => e.preventDefault());
-    dropZone.addEventListener("drop", e => {
-      e.preventDefault();
-      const files = e.dataTransfer.files;
-      document.getElementById("chapterImages").files = files;
-      dropZone.innerHTML = `<b>Đã chọn ${files.length} ảnh chapter</b><br>Sẵn sàng đăng!`;
-    });
-    document.getElementById("chapterImages").addEventListener("change", () => {
-      const files = document.getElementById("chapterImages").files;
-      dropZone.innerHTML = `<b>Đã chọn ${files.length} ảnh chapter</b><br>Sẵn sàng đăng!`;
-    });
+    const jsonBlob=new Blob([JSON.stringify(stories,null,2)],{type:"application/json"});
+    await uploadFile("stories.json",jsonBlob);
 
-    // Hàm chính
-    async function uploadAll() {
-      const status = document.getElementById("status");
-      const bar = document.getElementById("progressBar");
-      try {
-        status.textContent = "Đang chuẩn bị...";
-        bar.style.width = "5%";
-
-        const id = document.getElementById("id").value.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
-        const title = document.getElementById("title").value.trim();
-        if (!title || !id) throw "Vui lòng nhập tên truyện và ID";
-
-        // Upload bìa
-        status.textContent = "Upload ảnh bìa...";
-        bar.style.width = "20%";
-        const coverUrl = await uploadFile(`images/${id}_cover.jpg`, document.getElementById("cover").files[0]);
-
-        // Upload chapter
-        const files = document.getElementById("chapterImages").files;
-        const imageUrls = [];
-        for (let i = 0; i < files.length; i++) {
-          status.textContent = `Upload trang ${i + 1}/${files.length}...`;
-          const url = await uploadFile(`images/${id}_p${i + 1}.jpg`, files[i]);
-          imageUrls.push(url);
-          bar.style.width = `${20 + (i + 1) / files.length * 70}%`;
-        }
-
-        // Cập nhật stories.json
-        status.textContent = "Cập nhật danh sách...";
-        bar.style.width = "95%";
-        const stories = await fetch(RAW + "/stories.json?t=" + Date.now()).then(r => r.ok ? r.json() : []);
-        const exist = stories.find(s => s.id === id);
-        const newChap = { name: document.getElementById("chap").value || "Chapter mới", images: imageUrls };
-
-        if (exist) {
-          exist.chapters.push(newChap);
-          if (document.getElementById("description").value) exist.description = document.getElementById("description").value;
-        } else {
-          stories.push({
-            id, title,
-            author: document.getElementById("author").value || "Không rõ",
-            description: document.getElementById("description").value || "Chưa có tóm tắt",
-            thumbnail: coverUrl,
-            chapters: [newChap]
-          });
-        }
-
-        const jsonBlob = new Blob([JSON.stringify(stories, null, 2)], { type: "application/json" });
-        await uploadFile("stories.json", jsonBlob);
-
-        bar.style.width = "100%";
-        status.innerHTML = "<b style='color:green'>HOÀN TẤT 100%!<br>Reload trang chủ để xem!</b>";
-      } catch (e) {
-        status.innerHTML = "<b style='color:red'>LỖI: " + e + "</b>";
-        bar.style.width = "0%";
-      }
-    }
-  </script>
+    bar.style.width="100%";
+    status.innerHTML="<b style='color:green'>HOÀN TẤT 100%!<br>Reload trang chủ để xem!</b>";
+  }catch(e){
+    status.innerHTML="<b style='color:red'>LỖI: "+e+"</b>";
+    bar.style.width="0%";
+  }
+}
+</script>
 </body>
 </html>
