@@ -1,96 +1,89 @@
-import { Manga } from "manga-lib";
-import fs from "fs-extra";
-import path from "path";
+const { manga } = require('manga-lib');
+const fs = require('fs-extra');
+const simpleGit = require('simple-git');
+const path = require('path');
 
 // ==== CẤU HÌNH ====
-const START_PAGE = 4;
-const END_PAGE = 14;
-const STORIES_FILE = path.join(process.cwd(), "stories.json");
-
-// Repo push config (sử dụng GITHUB_TOKEN của Actions)
-const REPO_URL = `https://x-access-token:${process.env.GITHUB_TOKEN}@github.com/pro-coconut/pro-coconut.github.io.git`;
+const TOKEN = "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"; // token GitHub
+const USERNAME = "pro-coconut";
+const REPO = "pro-coconut.github.io";
 const BRANCH = "main";
 
-// ==== LOAD STORIES CŨ ====
+const START_PAGE = 4;
+const END_PAGE = 14;
+
+const LOCAL_DIR = process.cwd();
+const STORIES_FILE = path.join(LOCAL_DIR, 'stories.json');
+const REPO_URL = `https://${TOKEN}@github.com/${USERNAME}/${REPO}.git`;
+
+// ==== LOAD STORIES HIỆN CÓ ====
 let stories = [];
 if (fs.existsSync(STORIES_FILE)) {
   stories = fs.readJsonSync(STORIES_FILE);
 }
 
-// ==== HÀM CẬP NHẬT TRUYỆN ====
-async function fetchStory(url) {
-  const manga = new Manga(url);
-  const info = await manga.getInfo();
+// ==== LẤY DANH SÁCH TRUYỆN ====
+async function fetchStoryList(page) {
+  const listUrl = `https://nettruyen0209.com/danh-sach-truyen/${page}/?sort=last_update&status=0`;
+  const result = await manga.list(listUrl);
+  return result; // trả về mảng { title, url }
+}
 
-  // Lấy slug/id từ url
-  const slug = url.split("/").filter(Boolean).pop();
-
-  // Kiểm tra truyện đã có chưa
-  let existing = stories.find(s => s.id === slug);
-
-  // Nếu có rồi, chỉ lấy chapter mới
+// ==== LẤY THÔNG TIN TRUYỆN ====
+async function fetchStoryData(url) {
+  const info = await manga.info(url);
+  // Kiểm tra xem truyện đã có chưa
+  const slug = info.slug;
+  const exist = stories.find(s => s.id === slug);
   let chapters = [];
-  if (existing) {
-    const lastChapter = existing.chapters.length;
-    const newChaps = await manga.getChapters(lastChapter + 1, lastChapter + 50); // lấy 50 chap kế tiếp
-    chapters = existing.chapters.concat(newChaps.map(c => ({
-      name: c.title,
-      images: c.images
-    })));
-    existing.chapters = chapters;
-    return existing;
+  if (exist) {
+    // chỉ lấy các chapter mới
+    const existChaps = exist.chapters.map(c => c.name);
+    chapters = info.chapters.filter(c => !existChaps.includes(c.name));
+    exist.chapters.push(...chapters);
+    return null; // không thêm truyện mới
   } else {
-    const allChaps = await manga.getChapters(1, 1000); // giả sử max 1000 chap
-    chapters = allChaps.map(c => ({
-      name: c.title,
-      images: c.images
-    }));
+    chapters = info.chapters;
     return {
       id: slug,
       title: info.title,
       author: info.author || "Không rõ",
       description: info.description || "",
-      thumbnail: info.image || "",
-      chapters
+      thumbnail: info.thumbnail || "",
+      chapters: chapters
     };
   }
 }
 
-// ==== HÀM CHẠY SCRAPER ====
-async function runScraper() {
+// ==== CHẠY SCRAPER ====
+(async () => {
   for (let page = START_PAGE; page <= END_PAGE; page++) {
-    console.log(`Fetching list page: ${page}`);
-    const listUrl = `https://nettruyen0209.com/danh-sach-truyen/${page}/?sort=last_update&status=0`;
-    const mangaList = await Manga.getList(listUrl);
-
-    for (const mangaUrl of mangaList) {
-      console.log(`Scraping ${mangaUrl}`);
+    console.log(`Fetching page ${page}...`);
+    let list = [];
+    try {
+      list = await fetchStoryList(page);
+    } catch (e) {
+      console.log("[WARN] Lỗi fetch list:", e.message);
+      continue;
+    }
+    for (const item of list) {
+      console.log(`Scraping ${item.title}`);
       try {
-        const story = await fetchStory(mangaUrl);
-
-        // Nếu chưa có, push vào array
-        if (!stories.find(s => s.id === story.id)) {
-          stories.push(story);
-        }
-      } catch (err) {
-        console.warn(`Failed ${mangaUrl}:`, err.message);
+        const story = await fetchStoryData(item.url);
+        if (story) stories.push(story);
+      } catch (e) {
+        console.log("[WARN] Lỗi fetch story:", e.message);
       }
     }
   }
 
-  // Lưu stories.json
-  fs.writeJsonSync(STORIES_FILE, stories, { spaces: 2, encoding: "utf-8" });
+  fs.writeJsonSync(STORIES_FILE, stories, { spaces: 2, encoding: 'utf-8' });
   console.log(`Saved ${stories.length} stories to ${STORIES_FILE}`);
 
-  // Push lên repo
-  console.log("Pushing to GitHub...");
-  await import("child_process").then(cp => {
-    cp.execSync(`git config --global user.email "action@github.com"`);
-    cp.execSync(`git config --global user.name "GitHub Action"`);
-    cp.execSync(`git add ${STORIES_FILE}`);
-    cp.execSync(`git commit -m "Update stories.json" || echo "No changes"`);
-    cp.execSync(`git push ${REPO_URL} ${BRANCH}`);
-  });
-}
-
-runScraper();
+  // ==== PUSH GITHUB ====
+  const git = simpleGit(LOCAL_DIR);
+  await git.add('./*');
+  await git.commit('Update stories.json');
+  await git.push(REPO_URL, BRANCH);
+  console.log('Pushed to GitHub successfully!');
+})();
