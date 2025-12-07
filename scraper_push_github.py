@@ -1,8 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 import json
-from git import Repo
 import os
+import subprocess
 
 # ==== CẤU HÌNH ====
 TOKEN = "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"  # Token GitHub
@@ -13,9 +13,10 @@ BRANCH = "main"
 START_PAGE = 4
 END_PAGE = 14
 
-REPO_URL = f"https://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@github.com/pro-coconut/pro-coconut.git"
 LOCAL_DIR = os.getcwd()  # root repo
 STORIES_FILE = os.path.join(LOCAL_DIR, "stories.json")
+
+REPO_URL = f"https://{TOKEN}@github.com/{USERNAME}/{REPO_NAME}.git"
 
 # ==== HÀM LẤY DANH SÁCH TRUYỆN ====
 def fetch_story_list(page):
@@ -53,8 +54,7 @@ def fetch_story_data(story_url):
 # ==== HÀM LẤY CHAPTER VÀ URL ẢNH ====
 def fetch_chapters(story_url, slug):
     chapters = []
-    # Giả sử chapter từ 1 đến 100 (hoặc có thể tùy chỉnh)
-    for i in range(1, 101):
+    for i in range(1, 101):  # giả sử max 100 chapter
         chap_url = f"{story_url}/chapter-{i}"
         resp = requests.get(chap_url)
         if resp.status_code != 200:
@@ -63,7 +63,7 @@ def fetch_chapters(story_url, slug):
         imgs = soup.select(".reading-detail img")
         if not imgs:
             continue
-        img_urls = [img['data-src'] if img.get('data-src') else img.get('src') for img in imgs]
+        img_urls = [img.get('data-src') or img.get('src') for img in imgs]
         chapters.append({
             "name": f"Chapter {i}",
             "images": img_urls
@@ -78,11 +78,11 @@ def save_stories(data):
 
 # ==== HÀM PUSH GITHUB ====
 def push_to_github():
-    repo = Repo(LOCAL_DIR)
-    repo.git.add(all=True)
-    repo.index.commit("Update stories.json")
-    origin = repo.remote(name='origin')
-    origin.push(refspec=f"{BRANCH}:{BRANCH}")
+    # git add, commit
+    subprocess.run(["git", "add", "."], check=True)
+    subprocess.run(["git", "commit", "-m", "Update stories.json"], check=True)
+    # git push với token nhúng
+    subprocess.run(["git", "push", REPO_URL, f"{BRANCH}:{BRANCH}"], check=True)
     print("Pushed to GitHub successfully!")
 
 # ==== CHẠY SCRAPER ====
@@ -90,7 +90,11 @@ def run_scraper():
     all_stories = []
     for page in range(START_PAGE, END_PAGE + 1):
         print(f"Fetching list page: {page}")
-        story_links = fetch_story_list(page)
+        try:
+            story_links = fetch_story_list(page)
+        except Exception as e:
+            print(f"[WARN] Failed to fetch list page {page}: {e}")
+            continue
         for link in story_links:
             print(f"Scraping {link}")
             try:
