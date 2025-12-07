@@ -4,163 +4,167 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title id="comic-title">Đang tải...</title>
+<link rel="stylesheet" href="css/style.css">
 <link rel="icon" href="data:,">
 <style>
   body {
     margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #121212;
+    background: #111;
     color: #fff;
-    scroll-behavior: smooth;
+    font-family: Arial, sans-serif;
   }
-
-  header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    background: rgba(0,0,0,0.8);
-    z-index: 1000;
-    padding: 15px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    backdrop-filter: blur(5px);
+  #pages { max-width: 900px; margin: 0 auto; padding: 10px; }
+  .chapter-title {
+    margin: 25px 0 10px;
+    font-size: 1.6em;
+    color: #e74c3c;
+    border-bottom: 2px solid #e74c3c;
+    padding-bottom: 5px;
   }
-
-  header h1 {
-    font-size: 1.4em;
-    margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  header button {
-    background: #e74c3c;
-    border: none;
-    color: #fff;
-    padding: 8px 15px;
-    border-radius: 25px;
-    font-size: 1em;
-    cursor: pointer;
-    transition: 0.3s;
-  }
-
-  header button:hover {
-    background: #c0392b;
-  }
-
-  #pages {
-    padding: 90px 10px 30px; /* padding-top đủ cho header */
-    max-width: 900px;
-    margin: 0 auto;
-  }
-
-  .chapter {
-    margin-bottom: 50px;
-    text-align: center;
-  }
-
-  .chapter h2 {
-    margin-bottom: 20px;
-    font-size: 1.5em;
-    color: #f39c12;
-    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
-  }
-
   .chapter img {
-    max-width: 100%;
-    height: auto;
+    width: 100%;
     display: block;
-    margin: 0 auto 15px;
-    border-radius: 10px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-    transition: transform 0.3s;
+    margin: 0;
+    padding: 0;
+    border: none;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
   }
-
-  .chapter img:hover {
-    transform: scale(1.02);
+  .chapter img.visible {
+    opacity: 1;
+    transform: translateY(0);
   }
-
-  .page-info {
+  .controls {
     position: fixed;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0,0,0,0.7);
-    color: #fff;
-    padding: 10px 20px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 8px 20px;
     border-radius: 30px;
-    font-weight: bold;
     z-index: 1000;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .controls button {
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+  }
+  .controls button:hover { background: #c0392b; }
+  @media(max-width:768px){
+    #pages{padding:5px;}
+    .chapter-title{font-size:1.3em;}
+    .controls{font-size:14px;padding:6px 15px;gap:8px;}
   }
 </style>
 </head>
 <body>
-
-<header>
-  <h1 id="comic-title">Đang tải...</h1>
-  <button onclick="history.back()">← Quay lại</button>
-</header>
-
 <div id="pages"></div>
-
-<div class="page-info" id="page-info">0 / 0</div>
+<div class="controls">
+  <button onclick="history.back()">← Back</button>
+  <span id="page-info">0 / 0</span>
+</div>
 
 <script>
 const urlParams = new URLSearchParams(window.location.search);
 const storyId = urlParams.get('id');
+let stories = [], currentChap = 0, currentImage = 0, loadingNext = false;
 
 if (!storyId) {
   document.body.innerHTML = "<h1 style='text-align:center;margin-top:50px'>Không tìm thấy truyện!</h1>";
 }
 
-fetch('stories.json')
-  .then(r => r.json())
-  .then(data => {
-    const story = data.find(s => s.id === storyId);
-    if (!story) throw new Error("Truyện không tồn tại");
+const pageInfo = document.getElementById('page-info');
+const container = document.getElementById('pages');
 
-    document.getElementById('comic-title').textContent = story.title;
-    const container = document.getElementById('pages');
+fetch('stories.json?t=' + Date.now())
+.then(r=>r.json())
+.then(data=>{
+  stories = data;
+  const story = stories.find(s=>s.id===storyId);
+  if(!story) throw new Error("Truyện không tồn tại");
 
-    story.chapters.forEach((chap) => {
-      const chapDiv = document.createElement('div');
-      chapDiv.className = 'chapter';
-      chapDiv.innerHTML = `<h2>${chap.name}</h2>`;
+  document.title = story.title + " - Coconut Manga";
+  document.getElementById('comic-title').textContent = story.title;
 
-      chap.images.forEach(src => {
-        const img = document.createElement('img');
-        img.src = src;
-        img.loading = "lazy";
-        img.alt = "page";
-        chapDiv.appendChild(img);
-      });
+  // Load saved position nếu có
+  const saved = localStorage.getItem(`${storyId}_lastPos`);
+  if(saved){
+    const [chapIdx,imgIdx] = saved.split('|').map(Number);
+    currentChap = chapIdx || 0;
+    currentImage = imgIdx || 0;
+  }
 
-      container.appendChild(chapDiv);
+  loadChapter(currentChap, currentImage);
+
+  // Theo dõi scroll để hiện số trang, fade-in, load chapter tiếp
+  window.addEventListener('scroll', () => {
+    const imgs = container.querySelectorAll('img');
+    let cur = 0;
+    imgs.forEach((img,i) => {
+      const rect = img.getBoundingClientRect();
+      if(rect.top < window.innerHeight*0.8){
+        img.classList.add('visible');
+      }
+      if(rect.top < window.innerHeight/2) cur = i + 1;
     });
+    currentImage = cur-1;
+    pageInfo.textContent = `${cur} / ${imgs.length}`;
+    localStorage.setItem(`${storyId}_lastPos`, currentChap+'|'+currentImage);
 
-    // Cập nhật số trang
-    const total = container.querySelectorAll('img').length;
-    const pageInfo = document.getElementById('page-info');
-    pageInfo.textContent = `1 / ${total}`;
-
-    window.addEventListener('scroll', () => {
-      const imgs = container.querySelectorAll('img');
-      let current = 1;
-      imgs.forEach((img, i) => {
-        if (img.getBoundingClientRect().top < window.innerHeight / 2) current = i + 1;
-      });
-      pageInfo.textContent = `${current} / ${total}`;
-    });
-  })
-  .catch(err => {
-    document.body.innerHTML = `<h1 style='text-align:center;margin-top:50px'>Lỗi: ${err.message}</h1>`;
+    // Load chapter tiếp nếu gần cuối
+    if(!loadingNext && currentChap < story.chapters.length-1){
+      const lastImg = imgs[imgs.length-1];
+      if(lastImg.getBoundingClientRect().bottom < window.innerHeight*2){
+        loadingNext = true;
+        loadChapter(currentChap+1);
+        loadingNext = false;
+      }
+    }
   });
-</script>
+})
+.catch(err=>{
+  document.body.innerHTML = `<h1 style='text-align:center;margin-top:50px'>Lỗi: ${err.message}</h1>`;
+});
 
+// Load chapter
+function loadChapter(idx, scrollToImg=0){
+  const story = stories.find(s=>s.id===storyId);
+  if(!story) return;
+  if(idx<0) idx=0;
+  if(idx>=story.chapters.length) idx=story.chapters.length-1;
+  currentChap = idx;
+  const chap = story.chapters[idx];
+
+  const chapTitle = document.createElement('h2');
+  chapTitle.className = 'chapter-title';
+  chapTitle.textContent = chap.name;
+  container.appendChild(chapTitle);
+
+  chap.images.forEach(src=>{
+    const img = document.createElement('img');
+    img.src = src;
+    img.loading = 'lazy';
+    img.alt = 'page';
+    container.appendChild(img);
+  });
+
+  // Scroll đến trang đã đọc trước
+  if(scrollToImg>0){
+    const imgs = container.querySelectorAll('img');
+    if(imgs[scrollToImg]) imgs[scrollToImg].scrollIntoView({behavior:'auto'});
+  }
+}
+</script>
 </body>
 </html>
