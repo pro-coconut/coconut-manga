@@ -1,101 +1,268 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Coconut Manga - Đọc truyện tranh online</title>
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" href="data:,">
-  <style>
-    body{background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;margin:0;color:#fff}
-    header{background:rgba(0,0,0,0.4);padding:40px 20px;text-align:center;border-radius:0 0 30px 30px}
-    header h1{font-size:3em;margin:0;text-shadow:0 4px 10px rgba(0,0,0,0.5)}
-    header p{font-size:1.3em;opacity:0.9}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coconut Manga - Đọc truyện tranh online</title>
+<link rel="icon" href="data:,">
+<style>
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg,#667eea,#764ba2);
+  color: #fff;
+}
+header {
+  background: rgba(0,0,0,0.5);
+  text-align: center;
+  padding: 40px 20px;
+  border-radius: 0 0 30px 30px;
+}
+header h1 {
+  margin: 0;
+  font-size: 3em;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+header p {
+  margin: 10px 0 0;
+  font-size: 1.2em;
+  opacity: 0.9;
+}
 
-    .search-container{max-width:700px;margin:30px auto;padding:0 20px;position:relative}
-    #search-input{width:100%;padding:18px 60px 18px 25px;font-size:1.2em;border:none;border-radius:50px;box-shadow:0 10px 30px rgba(0,0,0,0.3);outline:none}
-    .search-btn{position:absolute;right:25px;top:50%;transform:translateY(-50%);background:#e74c3c;color:#fff;border:none;width:55px;height:55px;border-radius:50%;font-size:1.6em;cursor:pointer;box-shadow:0 5px 15px rgba(0,0,0,0.3)}
+.tabs {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+.tab {
+  padding: 10px 25px;
+  margin: 0 10px;
+  border-radius: 25px;
+  cursor: pointer;
+  background: rgba(0,0,0,0.3);
+  transition: 0.3s;
+}
+.tab.active {
+  background: #e74c3c;
+}
 
-    .container{max-width:1300px;margin:0 auto;padding:20px}
-    .story-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:25px}
-    .story-card{background:#fff;color:#333;border-radius:15px;overflow:hidden;box-shadow:0 10px 25px rgba(0,0,0,0.2);transition:all .3s;cursor:pointer}
-    .story-card:hover{transform:translateY(-12px);box-shadow:0 20px 40px rgba(0,0,0,0.3)}
-    .story-card img{width:100%;height:280px;object-fit:cover}
-    .story-info{padding:15px}
-    .story-info h3{font-size:1.25em;margin:0 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .story-info p{font-size:0.95em;color:#e74c3c;margin:0}
+.search-container {
+  max-width: 700px;
+  margin: 10px auto 30px;
+  position: relative;
+  padding: 0 20px;
+}
+#search-input {
+  width: 100%;
+  padding: 16px 55px 16px 20px;
+  font-size: 1.1em;
+  border: none;
+  border-radius: 50px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  outline: none;
+}
+.search-btn {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  font-size: 1.4em;
+  cursor: pointer;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
 
-    .no-result{text-align:center;padding:60px;font-size:1.6em;color:#fff;opacity:0.9}
-    .loading{text-align:center;padding:60px;font-size:1.6em;color:#fff}
+.container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 20px;
+}
+.story-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill,minmax(200px,1fr));
+  gap: 25px;
+}
+.story-card {
+  background: #fff;
+  color: #333;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  transition: all .3s;
+  cursor: pointer;
+}
+.story-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+.story-card img {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+}
+.story-info {
+  padding: 15px;
+}
+.story-info h3 {
+  font-size: 1.2em;
+  margin: 0 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.story-info p {
+  font-size: 0.95em;
+  color: #e74c3c;
+  margin: 0;
+}
+.latest-chapter {
+  margin-top: 5px;
+  font-size: 0.85em;
+  color: #444;
+}
 
-    .add-btn{position:fixed;bottom:25px;right:25px;background:#e74c3c;color:#fff;width:65px;height:65px;border-radius:50%;font-size:35px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 25px rgba(231,76,60,0.6);z-index:999;transition:.3s}
-    .add-btn:hover{transform:scale(1.1);box-shadow:0 12px 30px rgba(231,76,60,0.8)}
-  </style>
+.no-result, .loading {
+  text-align: center;
+  padding: 60px;
+  font-size: 1.4em;
+  color: #fff;
+  opacity: 0.9;
+}
+
+.add-btn {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  background: #e74c3c;
+  color: #fff;
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;
+  font-size: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 25px rgba(231,76,60,0.6);
+  z-index: 999;
+  transition: .3s;
+}
+.add-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 12px 30px rgba(231,76,60,0.8);
+}
+</style>
 </head>
 <body>
-  <header>
-    <h1>Coconut Manga</h1>
-    <p>Đọc truyện tranh online – Bộ sưu tập của Coconut</p>
-  </header>
 
-  <div class="search-container">
-    <input type="text" id="search-input" placeholder="Tìm truyện nhanh... (One Piece, Ta vô địch, Naruto...)">
-    <button class="search-btn">🔍</button>
+<header>
+  <h1>Coconut Manga</h1>
+  <p>Đọc truyện tranh online – Bộ sưu tập của Coconut</p>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-tab="latest">Mới cập nhật</div>
+  <div class="tab" data-tab="popular">Xem nhiều</div>
+  <div class="tab" data-tab="search">Tìm kiếm</div>
+</div>
+
+<div class="search-container" style="display:none;">
+  <input type="text" id="search-input" placeholder="Tìm truyện nhanh... (One Piece, Naruto...)">
+  <button class="search-btn">🔍</button>
+</div>
+
+<div class="container">
+  <div id="story-list" class="story-grid">
+    <div class="loading">Đang tải truyện...</div>
   </div>
+</div>
 
-  <div class="container">
-    <div id="story-list" class="story-grid">
-      <div class="loading">Đang tải truyện...</div>
-    </div>
-  </div>
+<a href="upload.html" class="add-btn">+</a>
 
-  <a href="upload.html" class="add-btn">+</a>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const list = document.getElementById('story-list');
+  const inputContainer = document.querySelector('.search-container');
+  const input = document.getElementById('search-input');
+  const tabs = document.querySelectorAll('.tab');
+  let stories = [];
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const list = document.getElementById('story-list');
-      const input = document.getElementById('search-input');
-      let stories = [];
+  fetch('stories.json?t=' + Date.now())
+    .then(r => r.json())
+    .then(data => {
+      stories = data;
+      renderLatest();
+    })
+    .catch(() => list.innerHTML = '<div class="no-result">Lỗi tải dữ liệu 😢</div>');
 
-      fetch('stories.json?t=' + Date.now())
-        .then(r => r.json())
-        .then(data => {
-          stories = data;
-          render(stories);
-        })
-        .catch(() => list.innerHTML = '<div class="no-result">Lỗi tải dữ liệu 😢</div>');
-
-      function render(data) {
-        if (data.length === 0) {
-          list.innerHTML = '<div class="no-result">Không tìm thấy truyện nào 🥺</div>';
-          return;
-        }
-        list.innerHTML = '';
-        data.forEach(s => {
-          const div = document.createElement('div');
-          div.className = 'story-card';
-          div.onclick = () => location.href = `story.html?id=${s.id}`;
-          div.innerHTML = `
-            <img src="${s.thumbnail}" alt="${s.title}" loading="lazy">
-            <div class="story-info">
-              <h3>${s.title}</h3>
-              <p>${s.author || 'Đang cập nhật'}</p>
-            </div>
-          `;
-          list.appendChild(div);
-        });
-      }
-
-      input.addEventListener('input', () => {
-        const q = input.value.trim().toLowerCase();
-        if (!q) return render(stories);
-        const filtered = stories.filter(s => 
-          s.title.toLowerCase().includes(q) || 
-          (s.author && s.author.toLowerCase().includes(q))
-        );
-        render(filtered);
-      });
+  function renderCards(data) {
+    if (!data.length) {
+      list.innerHTML = '<div class="no-result">Không tìm thấy truyện nào 🥺</div>';
+      return;
+    }
+    list.innerHTML = '';
+    data.forEach(s => {
+      const div = document.createElement('div');
+      div.className = 'story-card';
+      div.onclick = () => location.href = `story.html?id=${s.id}`;
+      const latestChap = s.chapters.length ? s.chapters[s.chapters.length-1].name : 'Chưa có chapter';
+      div.innerHTML = `
+        <img src="${s.thumbnail}" alt="${s.title}" loading="lazy">
+        <div class="story-info">
+          <h3>${s.title}</h3>
+          <p>${s.author || 'Đang cập nhật'}</p>
+          <div class="latest-chapter">${latestChap}</div>
+        </div>
+      `;
+      list.appendChild(div);
     });
-  </script>
+  }
+
+  function renderLatest() {
+    const sorted = [...stories].sort((a,b) => {
+      const aDate = a.chapters.length ? a.chapters[a.chapters.length-1].name : '';
+      const bDate = b.chapters.length ? b.chapters[b.chapters.length-1].name : '';
+      return bDate.localeCompare(aDate);
+    });
+    renderCards(sorted);
+  }
+
+  function renderPopular() {
+    // Tạm thời hiển thị theo số chapter nhiều nhất
+    const sorted = [...stories].sort((a,b) => b.chapters.length - a.chapters.length);
+    renderCards(sorted);
+  }
+
+  function renderSearch() {
+    inputContainer.style.display = 'block';
+    input.focus();
+    input.addEventListener('input', () => {
+      const q = input.value.trim().toLowerCase();
+      const filtered = stories.filter(s =>
+        s.title.toLowerCase().includes(q) ||
+        (s.author && s.author.toLowerCase().includes(q))
+      );
+      renderCards(filtered);
+    });
+  }
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      inputContainer.style.display = 'none';
+      input.value = '';
+      if(tab.dataset.tab === 'latest') renderLatest();
+      else if(tab.dataset.tab === 'popular') renderPopular();
+      else if(tab.dataset.tab === 'search') renderSearch();
+    });
+  });
+});
+</script>
+
 </body>
 </html>
