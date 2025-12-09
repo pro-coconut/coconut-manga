@@ -187,5 +187,38 @@
         ]
       }
     ]
+  },
+  {
+    "id": "uesugi",
+    "title": "Uesugi-kun muốn từ bỏ làm con gái",
+    "author": "Yabuuchi Yuu (trans: coconut)",
+    "description": "Uesugi-kun là một cậu bé nhỏ nhắn và dễ thương như một cô gái. Cậu thầm thích một cô bạn từ thuở nhỏ, nhưng lại tình cờ nghe thấy cô ấy nói: \"Nếu Uesugi là con gái thì chắc chắn sẽ đáng yêu lắm!\" Uesugi-kun không cao như cậu bạn thời thơ ấu Eito, cũng không học giỏi, và giờ đây trái tim cậu còn tan vỡ. Trong lúc buồn bã, Uesugi-kun ghé qua một ngôi đền khi đang làm việc vặt và cầu nguyện...",
+    "thumbnail": "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-0/cover.jpg",
+    "chapters": [
+      {
+        "name": "Chapter 18",
+        "images": [
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/001.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/002.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/003.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/004.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/005.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/006.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/007.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/008.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/009.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/010.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/011.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/012.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/013.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/014.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/015.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/016.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/017.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/018.jpg",
+          "https://raw.githubusercontent.com/pro-coconut/pro-coconut.github.io/main/images/uesugi/chap-18/019.jpg"
+        ]
+      }
+    ]
   }
 ]
