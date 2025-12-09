@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title id="comic-title">Đang tải...</title>
-<link rel="stylesheet" href="css/style.css">
 <link rel="icon" href="data:,">
 <style>
   body {
@@ -66,8 +65,11 @@
 <script>
 const urlParams = new URLSearchParams(window.location.search);
 const storyId = urlParams.get('id');
-if (!storyId) {
-  document.body.innerHTML = "<h1 style='text-align:center;margin-top:50px;color:#fff'>Không tìm thấy truyện!</h1>";
+const chapIndex = parseInt(urlParams.get('chap'));
+
+if (!storyId || isNaN(chapIndex)) {
+  document.body.innerHTML =
+    "<h1 style='text-align:center;margin-top:50px;color:#fff'>Thiếu thông tin chapter!</h1>";
 }
 
 fetch('stories.json')
@@ -76,25 +78,20 @@ fetch('stories.json')
     const story = data.find(s => s.id === storyId);
     if (!story) throw new Error("Truyện không tồn tại");
 
-    document.getElementById('comic-title').textContent = story.title;
+    const chap = story.chapters[chapIndex];
+    if (!chap) throw new Error("Chapter không tồn tại");
+
+    document.getElementById('comic-title').textContent = story.title + " - " + chap.name;
 
     const container = document.getElementById('pages');
+    container.innerHTML = `<h2 style="color:#e74c3c;text-align:center;margin:10px 0">${chap.name}</h2>`;
 
-    story.chapters.forEach((chap, idx) => {
-      const chapDiv = document.createElement('div');
-      chapDiv.className = 'chapter';
-      chapDiv.id = 'chap' + idx;
-      chapDiv.innerHTML = `<h2 style="color:#e74c3c;text-align:center;margin:10px 0">${chap.name}</h2>`;
-
-      chap.images.forEach(src => {
-        const img = document.createElement('img');
-        img.src = src;
-        img.alt = "page";
-        img.loading = "lazy";
-        chapDiv.appendChild(img);
-      });
-
-      container.appendChild(chapDiv);
+    chap.images.forEach(src => {
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = "page";
+      img.loading = "lazy";
+      container.appendChild(img);
     });
 
     const imgs = container.querySelectorAll('img');
@@ -111,7 +108,8 @@ fetch('stories.json')
     });
   })
   .catch(err => {
-    document.body.innerHTML = `<h1 style='text-align:center;margin-top:50px;color:#e74c3c'>Lỗi: ${err.message}</h1>`;
+    document.body.innerHTML =
+      `<h1 style='text-align:center;margin-top:50px;color:#e74c3c'>Lỗi: ${err.message}</h1>`;
   });
 </script>
 
