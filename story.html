@@ -168,8 +168,10 @@
 <script>
 const urlParams = new URLSearchParams(location.search);
 const id = urlParams.get('id');
+
 if (!id) {
-  document.getElementById("content").innerHTML = "<h1 style='text-align:center;padding:100px'>Không tìm thấy truyện!</h1>";
+  document.getElementById("content").innerHTML =
+    "<h1 style='text-align:center;padding:100px'>Không tìm thấy truyện!</h1>";
 }
 
 fetch('stories.json?t=' + Date.now())
@@ -200,7 +202,7 @@ fetch('stories.json?t=' + Date.now())
         <h3>Danh sách chapter (${story.chapters.length})</h3>
         <div class="chap-grid">
           ${story.chapters.map((ch, i) => `
-            <div class="chap-btn" onclick="location.href='reader.html?id=${id}#chap${i}'">
+            <div class="chap-btn" onclick="location.href='reader.html?id=${id}&chap=${i}'">
               ${ch.name}
             </div>
           `).join('')}
@@ -209,7 +211,8 @@ fetch('stories.json?t=' + Date.now())
     `;
   })
   .catch(() => {
-    document.getElementById("content").innerHTML = "<h1 style='text-align:center;padding:100px;color:#e74c3c'>Lỗi tải truyện 😢</h1>";
+    document.getElementById("content").innerHTML =
+      "<h1 style='text-align:center;padding:100px;color:#e74c3c'>Lỗi tải truyện 😢</h1>";
   });
 </script>
 
