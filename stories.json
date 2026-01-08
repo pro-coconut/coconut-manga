@@ -488,5 +488,45 @@
         ]
       }
     ]
+  },
+  {
+    "id": "saijakukizoku",
+    "title": "Saijaku Kizoku ni Tensei Shita node Akuyaku Tachi wo Atsumete Mita",
+    "author": "Không rõ",
+    "description": "Quý tộc yếu nhất, Adele: Biến phản diện thành đồng minh để quản lý lãnh địa!\nAdele, một quý tộc có địa vị thấp kém nhất, đang đối mặt với kết cục sụp đổ không thể tránh khỏi nếu không hành động kịp thời. Quyết tâm thoát khỏi số phận diệt vong, cậu chọn làm điều không tưởng: chiêu mộ những phản diện mạnh nhất làm đồng minh!\nCùng những người bạn đồng hành “khó tin” ấy, Adele bắt đầu hành trình cải tạo lãnh địa bị bỏ hoang của mình thành một vùng đất phồn vinh.\nLiệu vị quý tộc bị xem thường này có thể vươn lên nghịch cảnh và viết lại số phận, với sự trợ giúp của những đồng minh đáng sợ mới hay không?",
+    "thumbnail": "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-0/cover.jpg",
+    "chapters": [
+      {
+        "name": "Chapter 1",
+        "images": [
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/001.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/002.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/003.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/004.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/005.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/006.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/007.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/008.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/009.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/010.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/011.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/012.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/013.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/014.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/015.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/016.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/017.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/018.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/019.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/020.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/021.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/022.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/023.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/024.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/025.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/saijakukizoku/chap-1/026.png"
+        ]
+      }
+    ]
   }
 ]
