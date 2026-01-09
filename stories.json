@@ -559,5 +559,36 @@
         ]
       }
     ]
+  },
+  {
+    "id": "demxuongchihuyquanmatkiemsoat",
+    "title": "Đêm xuống, chỉ huy quan mất kiểm soát",
+    "author": "Không rõ",
+    "description": "Từ nhỏ, vì thường xuyên bị bạn học bắt nạt và sự nhu nhược của cha mẹ, cô khao khát trở nên mạnh mẽ. Lý tưởng của cô là sau này có thể đứng trên đỉnh cao của giới thượng lưu. Khi đã làm được điều đó, cô lựa chọn trả thù những kẻ từng ức hiếp mình và gia đình.\nCòn anh, một công tử chính hiệu, lý tưởng của anh là thoát khỏi sự ràng buộc của gia đình để theo đuổi con đường của chính mình…",
+    "thumbnail": "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-0/cover.jpg",
+    "chapters": [
+      {
+        "name": "Chapter 1",
+        "images": [
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/001.webp",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/002.webp",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/003.webp",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/004.webp",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/005.webp",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/006.webp",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/007.webp",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/008.webp",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/009.webp",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/010.webp",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/011.webp",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/012.webp",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/013.webp",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/014.webp",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/015.webp",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/016.webp",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/demxuongchihuyquanmatkiemsoat/chap-1/017.webp"
+        ]
+      }
+    ]
   }
 ]
