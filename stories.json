@@ -528,5 +528,36 @@
         ]
       }
     ]
+  },
+  {
+    "id": "tinhyeuchinhxac",
+    "title": "Tình yêu chính xác",
+    "author": "Không rõ",
+    "description": "Nữ chính Tô Uyển là thiên kim của Tô Giang – người đứng đầu Tập đoàn Tô thị. Do Tô thị phá sản và gánh khoản nợ mười triệu, cô bị tổng giám đốc Tập đoàn Đế Quốc là Nguyễn Hạo Dương ép bước vào cuộc sống “giam cầm”. Việc để Tô Uyển sinh con cho Nguyễn Hạo Dương là một bí mật, đồng thời cũng là bí mật có thể lật đổ vị trí tổng giám đốc của anh ta tại Tập đoàn Đế Quốc.",
+    "thumbnail": "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-0/cover.jpg",
+    "chapters": [
+      {
+        "name": "Chapter 1",
+        "images": [
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/001.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/002.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/003.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/004.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/005.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/006.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/007.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/008.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/009.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/010.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/011.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/012.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/013.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/014.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/015.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/016.png",
+          "https://raw.githubusercontent.com/pro-coconut/coconut-manga/main/images/tinhyeuchinhxac/chap-1/017.png"
+        ]
+      }
+    ]
   }
 ]
